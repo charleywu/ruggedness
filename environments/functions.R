@@ -32,6 +32,9 @@ ackley <- function(xx, a=20, b=0.2, c=2*pi)
   # a = constant (optional), with default value 20
   # b = constant (optional), with default value 0.2
   # c = constant (optional), with default value 2*pi
+
+
+  #range = seq(-32.768,32.768,(32.768+32.768)/1000) #1:1001
   #
   ##########################################################################
   
@@ -44,57 +47,12 @@ ackley <- function(xx, a=20, b=0.2, c=2*pi)
   term2 <- -exp(sum2/d)
   
   y <- term1 + term2 + a + exp(1)
-  
-  y <- (y -  4.440892e-16) / (2.232012e+01 - 4.440892e-16)
 
+  y <- (-y + 2.232012e+01)/ abs(2.232012e+01 - 0) #convert to maximization problem and scale between 0 and 1
   
   return(y)
 }
 
-
-bukin6 <- function(xx)
-{
-  ##########################################################################
-  #
-  # BUKIN FUNCTION N. 6
-  #
-  # Authors: Sonja Surjanovic, Simon Fraser University
-  #          Derek Bingham, Simon Fraser University
-  # Questions/Comments: Please email Derek Bingham at dbingham@stat.sfu.ca.
-  #
-  # Copyright 2013. Derek Bingham, Simon Fraser University.
-  #
-  # THERE IS NO WARRANTY, EXPRESS OR IMPLIED. WE DO NOT ASSUME ANY LIABILITY
-  # FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-  # derivative works, such modified software should be clearly marked.
-  # Additionally, this program is free software; you can redistribute it 
-  # and/or modify it under the terms of the GNU General Public License as 
-  # published by the Free Software Foundation; version 2.0 of the License. 
-  # Accordingly, this program is distributed in the hope that it will be 
-  # useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
-  # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
-  # General Public License for more details.
-  #
-  # For function details and reference information, see:
-  # http://www.sfu.ca/~ssurjano/
-  #
-  ##########################################################################
-  #
-  # INPUT:
-  #
-  # xx = c(x1, x2)
-  #
-  ##########################################################################
-  
-  x1 <- xx[1]
-  x2 <- xx[2]
-  
-  term1 <- 100 * sqrt(abs(x2 - 0.01*x1^2))
-  term2 <- 0.01 * abs(x1+10)
-  
-  y <- term1 + term2
-  return(y)
-}
 
 crossit <- function(xx)
 {
@@ -138,8 +96,8 @@ crossit <- function(xx)
   
   y <- -0.0001 * (abs(fact1*fact2)+1)^0.1
   
-  y <- (y - -2.062593e+00) / (-1.000000e-04 - -2.062593e+00)
-  
+  y <- (-y -0.000100)/ abs(-0.000100 - -2.062593) #convert to maximization problem and scale between 0 and 1
+
   return(y)
 }
 
@@ -184,8 +142,7 @@ drop <- function(xx)
   frac2 <- 0.5*(x1^2+x2^2) + 2
   
   y <- -frac1/frac2
-  
-  y <- (y - -1.000000e+00) / (-6.036063e-11 - -1.000000e+00)
+  y <- (-y + -6.036063e-11)/ abs(-6.036063e-11 - 1.000000e+00) #convert to maximization problem and scale between 0 and 1
   
   return(y)
 }
@@ -231,46 +188,7 @@ egg <- function(xx)
   term2 <- -x1 * sin(sqrt(abs(x1-(x2+47))))
   
   y <- term1 + term2
-  
-  y <- (y - -9.595705e+02) / (1.049132e+03 - -9.595705e+02)
-  
-  return(y)
-}
-
-grlee12 <- function(x)
-{
-  ##########################################################################
-  #
-  # GRAMACY & LEE (2012) FUNCTION
-  #
-  # Authors: Sonja Surjanovic, Simon Fraser University
-  #          Derek Bingham, Simon Fraser University
-  # Questions/Comments: Please email Derek Bingham at dbingham@stat.sfu.ca.
-  #
-  # Copyright 2013. Derek Bingham, Simon Fraser University.
-  #
-  # THERE IS NO WARRANTY, EXPRESS OR IMPLIED. WE DO NOT ASSUME ANY LIABILITY
-  # FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-  # derivative works, such modified software should be clearly marked.
-  # Additionally, this program is free software; you can redistribute it 
-  # and/or modify it under the terms of the GNU General Public License as 
-  # published by the Free Software Foundation; version 2.0 of the License. 
-  # Accordingly, this program is distributed in the hope that it will be 
-  # useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
-  # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
-  # General Public License for more details.
-  #
-  # For function details and reference information, see:
-  # http://www.sfu.ca/~ssurjano/
-  #
-  ##########################################################################
-  
-  term1 <- sin(10*pi*x) / (2*x)
-  term2 <- (x-1)^4
-  
-  y <- term1 + term2
-  
-  y <- (y - -0.86887) / (5.0625 - -0.86887)
+  y <- (-y + 1049.1316)/ abs(1049.1316 - -959.5705) #convert to maximization problem and scale between 0 and 1
   
   return(y)
 }
@@ -314,8 +232,7 @@ griewank <- function(xx)
   prod <- prod(cos(xx/sqrt(ii)))
   
   y <- sum - prod + 1
-  
-  y <- (y - 0.000000e+00) / (1.810395e+02 - 0.000000e+00)
+  y <- (-y + 181.0395)/ abs(181.0395 - 0) #convert to maximization problem and scale between 0 and 1
   
   return(y)
 }
@@ -361,8 +278,7 @@ holder <- function(xx)
   fact2 <- exp(abs(1 - sqrt(x1^2+x2^2)/pi))
   
   y <- -abs(fact1*fact2)
- 
-   y <- (y - -1.920805e+01) / (0.000000e+00 - -1.920805e+01)
+  y <- (-y + 0)/ abs(0 - -19.20805) #convert to maximization problem and scale between 0 and 1
   
   return(y)
 }
@@ -437,8 +353,7 @@ langer <- function(xx, m=5, cvec, A)
   
   y <- outer
   
-  y <- (y - -4.155052e+00) / (5.161699e+00 - -4.155052e+00)
-  
+  y <- (-y + 5.161699)/ abs(5.161699 - -4.155052) #convert to maximization problem and scale between 0 and 1
   return(y)
 }
 
@@ -487,9 +402,7 @@ levy <- function(xx)
   
   y <- term1 + sum + term3
   
-  y <- (y - 1.499760e-32) / (9.538281e+01 - 1.499760e-32)
-  
-  
+  y <- (-y + 9.538281e+01)/ abs(9.538281e+01 - 1.499760e-32) #convert to maximization problem and scale between 0 and 1
   return(y)
 }
 
@@ -535,9 +448,7 @@ levy13 <- function(xx)
   term3 <- (x2-1)^2 * (1+(sin(2*pi*x2))^2)
   
   y <- term1 + term2 + term3
-  
-  y <- (y - 1.349784e-31) / (4.530203e+02 - 1.349784e-31)
-  
+  y <- (-y + 4.530203e+02)/ abs(4.530203e+02 - 1.349784e-31) #convert to maximization problem and scale between 0 and 1
   return(y)
 }
 
@@ -581,9 +492,7 @@ rastr <- function(xx)
   sum <- sum(xx^2 - 10*cos(2*pi*xx))
   
   y <- 10*d + sum
-  
-  y <- (y - 0.000000e+00) / (8.070288e+01 - 0.000000e+00)
-  
+  y <- (-y + 80.70288)/ abs(80.70288 - 0) #convert to maximization problem and scale between 0 and 1
   
   return(y)
 }
@@ -630,8 +539,7 @@ schaffer2 <- function(xx)
   fact2 <- (1 + 0.001*(x1^2+x2^2))^2
   
   y <- 0.5 + fact1/fact2
-  
-  y <- (y - 0.000000e+00) / (9.968394e-01 - 0.000000e+00)
+  y <- (-y + 0.9968394)/ abs(0.9968394 - 0) #convert to maximization problem and scale between 0 and 1
   
   
   return(y)
@@ -679,8 +587,7 @@ schaffer4 <- function(xx)
   fact2 <- (1 + 0.001*(x1^2+x2^2))^2
   
   y <- 0.5 + fact1/fact2
-  
-  y <- (y - 5.000939e-01) / (1.000000e+00 - 5.000939e-01)
+  y <- (y - 0.5000939)/ abs(1.0000000 - 0.5000939) #ALREADY A MAXIMIZATION PROBLEM, scale between 0 and 1
   
   
   return(y)
@@ -726,8 +633,7 @@ schwef <- function(xx)
   sum <- sum(xx*sin(sqrt(abs(xx))))
   
   y <- 418.9829*d - sum
-  
-  y <- (y - 2.719677e-04) / (1.675931e+03 - 2.719677e-04)
+  y <- (-y + 1.675931e+03)/ abs(1.675931e+03 - 2.719677e-04) #convert to maximization problem and scale between 0 and 1
   
   
   return(y)
@@ -777,59 +683,7 @@ shubert <- function(xx)
   
   y <- sum1 * sum2
   
-  y <- (y - -1.867219e+02) / (2.104818e+02 - -1.867219e+02)
-  
-  
-  return(y)
-}
-
-
-camel3 <- function(xx)
-{
-  ##########################################################################
-  #
-  # THREE-HUMP CAMEL FUNCTION
-  #
-  # Authors: Sonja Surjanovic, Simon Fraser University
-  #          Derek Bingham, Simon Fraser University
-  # Questions/Comments: Please email Derek Bingham at dbingham@stat.sfu.ca.
-  #
-  # Copyright 2013. Derek Bingham, Simon Fraser University.
-  #
-  # THERE IS NO WARRANTY, EXPRESS OR IMPLIED. WE DO NOT ASSUME ANY LIABILITY
-  # FOR THE USE OF THIS SOFTWARE.  If software is modified to produce
-  # derivative works, such modified software should be clearly marked.
-  # Additionally, this program is free software; you can redistribute it 
-  # and/or modify it under the terms of the GNU General Public License as 
-  # published by the Free Software Foundation; version 2.0 of the License. 
-  # Accordingly, this program is distributed in the hope that it will be 
-  # useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
-  # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
-  # General Public License for more details.
-  #
-  # For function details and reference information, see:
-  # http://www.sfu.ca/~ssurjano/
-  #
-  ##########################################################################
-  #
-  # INPUT:
-  #
-  # xx = c(x1, x2)
-  #
-  ##########################################################################
-  
-  x1 <- xx[1]
-  x2 <- xx[2]
-  
-  term1 <- 2*x1^2
-  term2 <- -1.05*x1^4
-  term3 <- x1^6 / 6
-  term4 <- x1*x2
-  term5 <- x2^2
-  
-  y <- term1 + term2 + term3 + term4 + term5
-  
-  y <- (y - 0.000000e+00) / (2.047917e+03  - 0.000000e+00)
+  y <- (-y + 210.4818)/ abs(210.4818 - -186.7219) #convert to maximization problem and scale between 0 and 1
   
   return(y)
 }
@@ -890,7 +744,7 @@ nk <- function(xx){
   vec<- c(x1,x2)
 
   #TODO: define N and K parameters
-  NKfunc <- benchmarkGeneratorNKL(6,2) #example with N =6 and K =2
+  NKfunc <- benchmarkGeneratorNKL(20,19) #example with N =6 and K =2
   y <- NKfunc(vec)
 
   return(y) 
