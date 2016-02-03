@@ -1,5 +1,5 @@
 #loop through each environment, and save the fitness as a 1001 x 1001 matrix
-
+ptm <- proc.time()
 source("envRange.R")
 source("functions.R")
 
@@ -24,19 +24,9 @@ for (i in 1:14){#loop through environments
 		}
 	}
 	#add to output list
-	output[[i]] <- fitnessMatrix
+	fitness[[i]] <- fitnessMatrix
 }
 
 save(fitness, file="environments.Rdata")
 
-
-
-Afunc<- function(iter){
-	ptm<- proc.time()
-	for (i in 1:iter){
-		x<- sample(1:1001,1)
-		y <- sample(1:1001,1)
-		blah<- output[[3]][x,y]
-	}
-	print(proc.time() - ptm)
-}
+print(proc.time() - ptm)
