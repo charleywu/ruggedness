@@ -85,6 +85,7 @@ for (i in 1:length(walkList)){
 		distributionList[[e]] <- codeMatrix
 	}
 	walkCodes[[i]] <- distributionList
+	print(i)
 }
 save(walkCodes, file="walkCodes.Rdata")
 print(proc.time() - ptm)
