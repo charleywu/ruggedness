@@ -22,5 +22,6 @@ SMentropy <- function(pdf, order, degree){
 		}else {#General case
 			ent <- (1/(degree-1)) * (1 - sum(pdf^order)^((degree-1)/(order-1)))
 		}
-	}return(ent)
+	}
+	return(ent)
 }

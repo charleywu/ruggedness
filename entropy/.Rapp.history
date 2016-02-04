@@ -1,0 +1,26 @@
+2990.977 /60
+walkCodes[[1]]
+walkCodes[[14]]
+list.files()
+load("walkCodes.Rdata")
+ls()
+object_size(walkCodes)
+objectsize(walkCodes)
+object.size(walkCodes)
+1031688/1021
+load("SMentropy.R")
+list.files()
+SMentropy(walkCodes[[1]][[1]][1,],1,1)
+ls()
+source("SMentropy.R")
+source("SMentropy.R")
+SMentropy(walkCodes[[1]][[1]][1,],1,1)
+walkCodes[[1]][[1]][1,]
+SMentropy(walkCodes[[1]][[1]][1,]/sum(walkCodes[[1]][[1]][1,]),1,1)
+SMentropy(walkCodes[[1]][[1]][50,]/sum(walkCodes[[1]][[1]][50,]),1,1)
+SMentropy(walkCodes[[1]][[5]][50,]/sum(walkCodes[[1]][[5]][50,]),1,1)
+SMentropy(walkCodes[[2]][[5]][50,]/sum(walkCodes[[2]][[5]][50,]),1,1)
+SMentropy(walkCodes[[3]][[5]][50,]/sum(walkCodes[[3]][[5]][50,]),1,1)
+SMentropy(walkCodes[[5]][[5]][50,]/sum(walkCodes[[5]][[5]][50,]),1,1)
+SMentropy(walkCodes[[9]][[5]][50,]/sum(walkCodes[[9]][[5]][50,]),1,1)
+SMentropy(walkCodes[[14]][[5]][50,]/sum(walkCodes[[14]][[5]][50,]),1,1)
