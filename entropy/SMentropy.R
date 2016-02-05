@@ -1,8 +1,11 @@
 #Sharma-Mittal entropy function (c) Crupi, Nelson, Meder, Cevolani, & Trentori (in preparation)
 SMentropy <- function(pdf, order, degree){
 	ent <- NA
-	if (sum(pdf)!= 1){#check that pdf is a proper probability distribution
+	if (!all.equal(sum(pdf),1)){#check that pdf is a proper probability distribution
 		return(ent) 
+	}else if (sum(pdf)==0){#if sum is zero
+		ent<-0
+		return(ent)
 }	else{
 		#special cases
 		if (degree==1){
