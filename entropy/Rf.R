@@ -33,7 +33,7 @@ ruggedness <-function(order,degree){
 	return(ruggednessVec)
 }
 
-Malanruggedness <-function(order,degree){
+Malanruggedness <-function(){
 	ruggednessVec <- c(rep(0,length(walkCodes)))
 	#loop through environments
 	for (i in 1:length(walkCodes)){
@@ -48,9 +48,7 @@ Malanruggedness <-function(order,degree){
 				p <- replications[rep,1:6]
 				if (sum(p)!=0){
 					pdf <- p/sum(replications[rep,]) #partial distribution
-					ent <- SMentropy(pdf,order,degree)
-					#scale by n_rugged/n_total
-					ent <- ent
+					ent <- SMentropy(pdf,1,1)
 				}else{
 					ent <- 0
 				}

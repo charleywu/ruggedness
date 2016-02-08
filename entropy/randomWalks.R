@@ -5,7 +5,7 @@ setwd("..") #move to parent folder
 setwd("environments")
 
 steps <- 10000
-stepsize <- 1
+stepsize <- 1 #try 10
 replications <- 100
 
 load("environments.Rdata")
