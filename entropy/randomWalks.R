@@ -47,5 +47,9 @@ for (i in 1:length(fitness)){
 
 setwd("..")
 setwd("entropy")
+setwd("walks")
+setwd("10000")
 save(walkList, file="walks.Rdata")
 print(proc.time() - ptm)
+setwd("..")
+setwd("..")

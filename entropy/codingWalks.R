@@ -1,9 +1,11 @@
 #coding random walks
 rm(list=ls())
 ptm<-proc.time()
+setwd("walks")
+setwd("10000") #walksize of walk to load
 load("walks.Rdata")
 
-#epsilon star values from fastEpsilon.R
+#epsilon star values from fastEpsilon.R (1 step epsilon star)
 epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)
 #from 10 step random walks
 #epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) 
@@ -91,3 +93,5 @@ for (i in 1:length(walkList)){
 }
 save(walkCodes, file="walkCodes.Rdata")
 print(proc.time() - ptm)
+setwd("..")
+setwd("..")
