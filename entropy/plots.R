@@ -25,21 +25,24 @@ df$Shannon <- ruggedness(1,1)
 df$Quadratic <- ruggedness(2,2)
 df$Hartley <- ruggedness(0,1)
 df$Tsallis <- ruggedness(10,10)
+df$Origin <- ruggedness(0,0)
+df$NonConcave <- ruggedness(10,0)
+df$Arimoto16 <- ruggedness(16,2 - 1/16)
 
-m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis"))
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis", "Origin", "NonConcave", "Arimoto16"))
 colnames(m1) <- c("envNames", "Entropy", "Ruggedness")
 m2 <- melt(df, id.vars="envNames", measure.vars=c("hillClimbing","random", "hybrid"))
 colnames(m2) <- c("envNames", "Model", "Performance")
 
 dm <- merge(m1,m2)
 
-P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=2, scales="free")
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")
 
 ggsave("EntropyPlot.pdf")
 
 #correlations
 
-ents <- c("Shannon","Quadratic", "Hartley", "Tsallis")
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis", "Origin", "NonConcave", "Arimoto16")
 models <- c("hillClimbing", "random", "hybrid")
 #loop through entropy measures
 for (ent in ents){
