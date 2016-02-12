@@ -1,399 +1,290 @@
 1+1
-setwd("github/ruggedness/entropy")
-load("SMentropy.R")
-source("SMentropy.R")
-source("Rf.R")
-Malanruggedness(1,1)
-load("walkCodes.Rdata")
-Malanruggedness(1,1)
-sum(pdf)
-pdf
-source("SMentropy.R")
-sum(pdf)
-Malanruggedness(1,1)
-p
-all.equal(1,1)
-!all.equal(1,1)
-Malanruggedness(1,1)
-source("SMentropy.R")
-Malanruggedness(1,1)
-source("SMentropy.R")
-Malanruggedness(1,1)
-log(exp(1.283135),6)
-1.283135/log(6)
-v <- Malanruggedness(1,1)/log(6)
-v
-i <- 1
-env <- walkCodes[[i]]#
-        H_epsilonVec <- c(rep(0, length(env)))#
-        #loop through epsilon values#
-        for (j in 1:length(env)){#
-            replications <- env[[j]]#
-            avgEntropy <- 0 #used to store entropy values#
-            #loop through replications#
-            for (rep in 1:nrow(replications)){#
-                p <- replications[rep,1:6]#
-                if (sum(p)!=0){#
-                    pdf <- p/sum(replications[rep,]) #partial distribution#
-                    ent <- SMentropy(pdf,order,degree)#
-                    #scale by n_rugged/n_total#
-                    ent <- ent#
-                }else{#
-                    ent <- 0#
-                }#
-                #add to avgEntropy (averaged later)#
-                avgEntropy <- avgEntropy +  ent#
-            }#
-            #calculate average entropy#
-            avgEntropy <- avgEntropy / nrow(replications)#
-            H_epsilonVec[j] <- avgEntropy
-}
-order <- 1
-degree <- 1
-env <- walkCodes[[i]]#
-        H_epsilonVec <- c(rep(0, length(env)))#
-        #loop through epsilon values#
-        for (j in 1:length(env)){#
-            replications <- env[[j]]#
-            avgEntropy <- 0 #used to store entropy values#
-            #loop through replications#
-            for (rep in 1:nrow(replications)){#
-                p <- replications[rep,1:6]#
-                if (sum(p)!=0){#
-                    pdf <- p/sum(replications[rep,]) #partial distribution#
-                    ent <- SMentropy(pdf,order,degree)#
-                    #scale by n_rugged/n_total#
-                    ent <- ent#
-                }else{#
-                    ent <- 0#
-                }#
-                #add to avgEntropy (averaged later)#
-                avgEntropy <- avgEntropy +  ent#
-            }#
-            #calculate average entropy#
-            avgEntropy <- avgEntropy / nrow(replications)#
-            H_epsilonVec[j] <- avgEntropy
-}
-H_epsilonVec
-H_epsilonVec/log(6)
-source("Rf.R")
-source("Rf.R")
-Malanruggedness()
-i<-1
-env <- walkCodes[[i]]#
-        H_epsilonVec <- c(rep(0, length(env)))#
-        #loop through epsilon values#
-        for (j in 1:length(env)){#
-            replications <- env[[j]]#
-            avgEntropy <- 0 #used to store entropy values#
-            #loop through replications#
-            for (rep in 1:nrow(replications)){#
-                p <- replications[rep,1:6]#
-                if (sum(p)!=0){#
-                    pdf <- p/sum(replications[rep,]) #partial distribution#
-                    ent <- sum(pdf * log(1/pdf,6))#
-                }else{#
-                    ent <- 0#
-                }#
-                #add to avgEntropy (averaged later)#
-                avgEntropy <- avgEntropy +  ent#
-            }
-}
-env <- walkCodes[[i]]#
-        H_epsilonVec <- c(rep(0, length(env)))#
-        #loop through epsilon values#
-        for (j in 1:length(env)){#
-            replications <- env[[j]]#
-            avgEntropy <- 0 #used to store entropy values#
-            #loop through replications#
-            for (rep in 1:nrow(replications)){#
-                p <- replications[rep,1:6]#
-                if (sum(p)!=0){#
-                    pdf <- p/sum(replications[rep,]) #partial distribution#
-                    ent <- sum(pdf * log(1/pdf,6))#
-                }else{#
-                    ent <- 0#
-                }#
-                #add to avgEntropy (averaged later)#
-                avgEntropy <- avgEntropy +  ent#
-            }#
-            #calculate average entropy#
-            avgEntropy <- avgEntropy / nrow(replications)#
-            H_epsilonVec[j] <- avgEntropy#
-        }
-H_epsilonVec
-coding random walks#
+load("/Users/charleywu/Github/ruggedness/entropy/walks.Rdata")
+load("/Users/charleywu/Github/ruggedness/entropy/Walks/10k/walkCodes.Rdata")
+getwd("")
+setwd("/Users/charleywu/Github/ruggedness/entropy")
+random walks#
 rm(list=ls())#
 ptm<-proc.time()#
-load("walks.Rdata")#
+setwd("..") #move to parent folder#
+setwd("environments")#
 #
-#epsilon star values from fastEpsilon.R#
-#epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)#
-#from 10 step random walks#
-epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) #
+steps <- 10#
+stepsize <- 1 #try 10#
+replications <- 100#
 #
-#negative function because R is stupid (x less than negative y looks like assign value; x<-y)#
-neg <- function(x) -x#
+load("environments.Rdata")#
 #
-#function for coding each line of random walk (*-*)#
-line_code <- function(delta_fitness, epsilon){#
-    code <- NA#
-    if (delta_fitness<neg(epsilon)){#
-        code <- neg(1)#
-    }else if (abs(delta_fitness)<=epsilon){#
-        code<-0#
-    }else if (delta_fitness>epsilon){#
-        code<- 1#
-    }#
-    return(code)#
-}#
-#
-#function for coding each pair of steps in random walk (*-*-*)#
-sequence_code <- function(line1, line2){#
-    sequence <- "NA NA"#
-    if (line1==0){#
-        if (line2==1){#
-            sequence <- "0 1"#
-        } else if (line2==neg(1)){#
-            sequence<- "0 -1"#
-        } else if (line2==0){#
-            sequence <- "0 0"#
-        }#
-    } else if (line1==1){#
-        if (line2==0){#
-            sequence <- "1 0"#
-        }else if (line2==neg(1)){#
-            sequence <- "1 -1"#
-        }else if (line2==1){#
-            sequence <- "1 1"#
-        }#
-    } else if (line1==neg(1)){#
-        if (line2==0){#
-            sequence <- "-1 0"#
-        } else if (line2==1){#
-            sequence<- "-1 1"#
-        }else if (line2==neg(1)){#
-            sequence <- "-1 -1"#
-        }#
-    } #
-    return(sequence)#
-}#
-#
-walkCodes <- list()#
+walkList <- list()#
 #loop through environments#
-for (i in 1:length(walkList)){#
-    walks <- walkList[[i]]#
-    estar <- epsilon_star[i]#
-    #loop through epsilon values#
-    distributionList <- list() #distribution of sequences over all epsilon values (9 epsilon values: matrix(100 reps x 998 sequences))#
-    epsilonVec <- c(0, estar/128, estar/64, estar/32, estar/16, estar/8, estar/4, estar/2, estar)#
-    for (e in 1:9){#
-        epsilon<- epsilonVec[e]#
-        #loop through replications#
-        codeMatrix <- matrix(0,nrow=ncol(walks), ncol=9) #9 different sequences x num replications#
-        colnames(codeMatrix) <- c("0 1", "0 -1", "1 0", "1 -1", "-1 0", "-1 1", "1 1", "-1 -1", "0 0") #first 6 are rugged, 7-8 are smooth, and 9 is neutral#
-        for (rep in 1:ncol(walks)){#
-            #loop through sequences#
-            for(step in 1:(nrow(walks)-2)){#
-                step1 <- walks[step,rep]#
-                step2 <- walks[step+1,rep]#
-                step3 <- walks[step+2,rep]#
-                #code lines#
-                line1 <- line_code(step2-step1, epsilon)#
-                line2 <- line_code(step3-step2, epsilon)#
-                #code sequences#
-                seq_code <- sequence_code(line1,line2)#
-                #add sequence to codeMatrix#
-                codeMatrix[rep,][seq_code] <- codeMatrix[rep,][seq_code] + 1#
+for (i in 1:length(fitness)){#
+    env <- fitness[[i]]#
+    #output for each walk#
+    walks <- matrix(nrow=steps,ncol=replications)#
+    #loop through replications#
+    for (rep in 1:replications){#
+#
+        #begin random walks#
+        #sample starting location#
+        startX <- sample(1:1001,1)#
+        startY <- sample(1:1001,1)#
+        #matrix storing fitness values for each step (x,y,fitness)#
+        path <- matrix(nrow=steps,ncol=3)#
+        path[1,] <- c(startX,startY,env[startX,startY])#
+        for (step in 2:steps){#
+            newX <- path[step-1,][1] + sample(0:stepsize,1)#
+            newY <- path[step-1,][2] + sample(0:stepsize,1)#
+                #check if beyond maximum bound#
+            if (newX>1001){#
+                newX <- newX - 1001#
             }#
+            if (newY>1001){#
+                newY <- newY - 1001#
+            }#
+            path[step,] <- c(newX,newY,env[newX,newY])#
         }#
-        #aggregate over epsilon values#
-        distributionList[[e]] <- codeMatrix#
+        #add finess value to walks#
+        walks[,rep] <- path[,3]#
     }#
-    walkCodes[[i]] <- distributionList#
-    print(i)#
+    #add fitness values to walk#
+    walkList[[i]] <- walks#
 }#
-save(walkCodes, file="walkCodes.Rdata")#
+#
+setwd("..")#
+setwd("entropy")#
+setwd("walks")#
+setwd("10")#
+save(walkList, file="walks.Rdata")#
 print(proc.time() - ptm)
-42376.120 /60
-706.2687/60
-ls
-ls()
-source("SMentropy")
-source("SMentropy.R")
-source("Rf.R")
-v <- Malanruggedness()
-v
-source("Rf.R")
-v <- Malanruggedness()
-v
-exp(v)
-log(exp(v),6)
-Ruggedness to performance#
+random walks#
+rm(list=ls())#
+ptm<-proc.time()#
+setwd("..") #move to parent folder#
+setwd("environments")#
 #
-library(ggplot2)#
-require(rje)#
-library(directlabels)#
-library(ggrepel)#
+steps <- 100#
+stepsize <- 1 #try 10#
+replications <- 100#
 #
-#from Barckozi, Analytis, & Wu (2016)#
-hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
-random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
-Hybrid <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+load("environments.Rdata")#
 #
-load("walkCodes.Rdata")#
-source("SMentropy.R")#
-source("Rf.R")#
+walkList <- list()#
+#loop through environments#
+for (i in 1:length(fitness)){#
+    env <- fitness[[i]]#
+    #output for each walk#
+    walks <- matrix(nrow=steps,ncol=replications)#
+    #loop through replications#
+    for (rep in 1:replications){#
 #
-envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
-#
-df <- data.frame(envNames)#
-df$hillClimbing <- hillClimbing#
-df$random <- random#
-df$hybrid <- Hybrid#
-#
-df$Shannon <- ruggedness(1,1)#
-df$Quadratic <- ruggedness(2,2)#
-df$Hartley <- ruggedness(0,1)#
-df$Tsallis <- ruggedness(10,10)#
-#
-m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis"))#
-colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
-m2 <- melt(df, id.vars="envNames", measure.vars=c("hillClimbing","random", "hybrid"))#
-colnames(m2) <- c("envNames", "Model", "Performance")#
-#
-dm <- merge(m1,m2)#
-#
-P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=2, scales="free")#
-#
-ggsave("EntropyPlot.pdf")#
-#
-#correlations#
-#
-ents <- c("Shannon","Quadratic", "Hartley", "Tsallis")#
-models <- c("hillClimbing", "random", "hybrid")#
-#loop through entropy measures#
-for (ent in ents){#
-    print(ent)#
-    dm.sub <- subset(dm, Entropy==ent)#
-    for (model in models){#
-        print(model)#
-        L <- dm.sub$Model == model#
-        print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+        #begin random walks#
+        #sample starting location#
+        startX <- sample(1:1001,1)#
+        startY <- sample(1:1001,1)#
+        #matrix storing fitness values for each step (x,y,fitness)#
+        path <- matrix(nrow=steps,ncol=3)#
+        path[1,] <- c(startX,startY,env[startX,startY])#
+        for (step in 2:steps){#
+            newX <- path[step-1,][1] + sample(0:stepsize,1)#
+            newY <- path[step-1,][2] + sample(0:stepsize,1)#
+                #check if beyond maximum bound#
+            if (newX>1001){#
+                newX <- newX - 1001#
+            }#
+            if (newY>1001){#
+                newY <- newY - 1001#
+            }#
+            path[step,] <- c(newX,newY,env[newX,newY])#
+        }#
+        #add finess value to walks#
+        walks[,rep] <- path[,3]#
     }#
-}
-Ruggedness to performance#
+    #add fitness values to walk#
+    walkList[[i]] <- walks#
+}#
 #
-library(ggplot2)#
-require(rje)#
-library(directlabels)#
-library(ggrepel)#
+setwd("..")#
+setwd("entropy")#
+setwd("walks")#
+setwd("100")#
+save(walkList, file="walks.Rdata")#
+print(proc.time() - ptm)
+setwd("..")#
+setwd("..")
+random walks#
+rm(list=ls())#
+ptm<-proc.time()#
+setwd("..") #move to parent folder#
+setwd("environments")#
 #
-#from Barckozi, Analytis, & Wu (2016)#
-hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
-random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
-Hybrid <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+steps <- 100#
+stepsize <- 1 #try 10#
+replications <- 100#
 #
-load("walkCodes2.Rdata")#
-source("SMentropy.R")#
-source("Rf.R")#
+load("environments.Rdata")#
 #
-envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+walkList <- list()#
+#loop through environments#
+for (i in 1:length(fitness)){#
+    env <- fitness[[i]]#
+    #output for each walk#
+    walks <- matrix(nrow=steps,ncol=replications)#
+    #loop through replications#
+    for (rep in 1:replications){#
 #
-df <- data.frame(envNames)#
-df$hillClimbing <- hillClimbing#
-df$random <- random#
-df$hybrid <- Hybrid#
-#
-df$Shannon <- ruggedness(1,1)#
-df$Quadratic <- ruggedness(2,2)#
-df$Hartley <- ruggedness(0,1)#
-df$Tsallis <- ruggedness(10,10)#
-#
-m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis"))#
-colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
-m2 <- melt(df, id.vars="envNames", measure.vars=c("hillClimbing","random", "hybrid"))#
-colnames(m2) <- c("envNames", "Model", "Performance")#
-#
-dm <- merge(m1,m2)#
-#
-P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=2, scales="free")#
-#
-ggsave("EntropyPlot.pdf")#
-#
-#correlations#
-#
-ents <- c("Shannon","Quadratic", "Hartley", "Tsallis")#
-models <- c("hillClimbing", "random", "hybrid")#
-#loop through entropy measures#
-for (ent in ents){#
-    print(ent)#
-    dm.sub <- subset(dm, Entropy==ent)#
-    for (model in models){#
-        print(model)#
-        L <- dm.sub$Model == model#
-        print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+        #begin random walks#
+        #sample starting location#
+        startX <- sample(1:1001,1)#
+        startY <- sample(1:1001,1)#
+        #matrix storing fitness values for each step (x,y,fitness)#
+        path <- matrix(nrow=steps,ncol=3)#
+        path[1,] <- c(startX,startY,env[startX,startY])#
+        for (step in 2:steps){#
+            newX <- path[step-1,][1] + sample(0:stepsize,1)#
+            newY <- path[step-1,][2] + sample(0:stepsize,1)#
+                #check if beyond maximum bound#
+            if (newX>1001){#
+                newX <- newX - 1001#
+            }#
+            if (newY>1001){#
+                newY <- newY - 1001#
+            }#
+            path[step,] <- c(newX,newY,env[newX,newY])#
+        }#
+        #add finess value to walks#
+        walks[,rep] <- path[,3]#
     }#
-}
-Ruggedness to performance#
-library(reshape2)#
-library(ggplot2)#
-require(rje)#
-library(directlabels)#
-library(ggrepel)#
+    #add fitness values to walk#
+    walkList[[i]] <- walks#
+}#
 #
-#from Barckozi, Analytis, & Wu (2016)#
-hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
-random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
-Hybrid <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+setwd("..")#
+setwd("entropy")#
+setwd("walks")#
+setwd("100")#
+save(walkList, file="walks.Rdata")#
+print(proc.time() - ptm)#
+setwd("..")#
+setwd("..")
+random walks#
+rm(list=ls())#
+ptm<-proc.time()#
+setwd("..") #move to parent folder#
+setwd("environments")#
 #
-load("walkCodes2.Rdata")#
-source("SMentropy.R")#
-source("Rf.R")#
+steps <- 1000#
+stepsize <- 1 #try 10#
+replications <- 100#
 #
-envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+load("environments.Rdata")#
 #
-df <- data.frame(envNames)#
-df$hillClimbing <- hillClimbing#
-df$random <- random#
-df$hybrid <- Hybrid#
+walkList <- list()#
+#loop through environments#
+for (i in 1:length(fitness)){#
+    env <- fitness[[i]]#
+    #output for each walk#
+    walks <- matrix(nrow=steps,ncol=replications)#
+    #loop through replications#
+    for (rep in 1:replications){#
 #
-df$Shannon <- ruggedness(1,1)#
-df$Quadratic <- ruggedness(2,2)#
-df$Hartley <- ruggedness(0,1)#
-df$Tsallis <- ruggedness(10,10)#
-#
-m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis"))#
-colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
-m2 <- melt(df, id.vars="envNames", measure.vars=c("hillClimbing","random", "hybrid"))#
-colnames(m2) <- c("envNames", "Model", "Performance")#
-#
-dm <- merge(m1,m2)#
-#
-P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=2, scales="free")#
-#
-ggsave("EntropyPlot.pdf")#
-#
-#correlations#
-#
-ents <- c("Shannon","Quadratic", "Hartley", "Tsallis")#
-models <- c("hillClimbing", "random", "hybrid")#
-#loop through entropy measures#
-for (ent in ents){#
-    print(ent)#
-    dm.sub <- subset(dm, Entropy==ent)#
-    for (model in models){#
-        print(model)#
-        L <- dm.sub$Model == model#
-        print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+        #begin random walks#
+        #sample starting location#
+        startX <- sample(1:1001,1)#
+        startY <- sample(1:1001,1)#
+        #matrix storing fitness values for each step (x,y,fitness)#
+        path <- matrix(nrow=steps,ncol=3)#
+        path[1,] <- c(startX,startY,env[startX,startY])#
+        for (step in 2:steps){#
+            newX <- path[step-1,][1] + sample(0:stepsize,1)#
+            newY <- path[step-1,][2] + sample(0:stepsize,1)#
+                #check if beyond maximum bound#
+            if (newX>1001){#
+                newX <- newX - 1001#
+            }#
+            if (newY>1001){#
+                newY <- newY - 1001#
+            }#
+            path[step,] <- c(newX,newY,env[newX,newY])#
+        }#
+        #add finess value to walks#
+        walks[,rep] <- path[,3]#
     }#
-}
+    #add fitness values to walk#
+    walkList[[i]] <- walks#
+}#
+#
+setwd("..")#
+setwd("entropy")#
+setwd("walks")#
+setwd("1000")#
+save(walkList, file="walks.Rdata")#
+print(proc.time() - ptm)#
+setwd("..")#
+setwd("..")
+steps <- 10000
+random walks#
+rm(list=ls())#
+ptm<-proc.time()#
+setwd("..") #move to parent folder#
+setwd("environments")#
+#
+steps <- 10000#
+stepsize <- 1 #try 10#
+replications <- 100#
+#
+load("environments.Rdata")#
+#
+walkList <- list()#
+#loop through environments#
+for (i in 1:length(fitness)){#
+    env <- fitness[[i]]#
+    #output for each walk#
+    walks <- matrix(nrow=steps,ncol=replications)#
+    #loop through replications#
+    for (rep in 1:replications){#
+#
+        #begin random walks#
+        #sample starting location#
+        startX <- sample(1:1001,1)#
+        startY <- sample(1:1001,1)#
+        #matrix storing fitness values for each step (x,y,fitness)#
+        path <- matrix(nrow=steps,ncol=3)#
+        path[1,] <- c(startX,startY,env[startX,startY])#
+        for (step in 2:steps){#
+            newX <- path[step-1,][1] + sample(0:stepsize,1)#
+            newY <- path[step-1,][2] + sample(0:stepsize,1)#
+                #check if beyond maximum bound#
+            if (newX>1001){#
+                newX <- newX - 1001#
+            }#
+            if (newY>1001){#
+                newY <- newY - 1001#
+            }#
+            path[step,] <- c(newX,newY,env[newX,newY])#
+        }#
+        #add finess value to walks#
+        walks[,rep] <- path[,3]#
+    }#
+    #add fitness values to walk#
+    walkList[[i]] <- walks#
+}#
+#
+setwd("..")#
+setwd("entropy")#
+setwd("walks")#
+setwd("10000")#
+save(walkList, file="walks.Rdata")#
+print(proc.time() - ptm)#
+setwd("..")#
+setwd("..")
 coding random walks#
 rm(list=ls())#
 ptm<-proc.time()#
+setwd("walks")#
+setwd("10") #walksize of walk to load#
 load("walks.Rdata")#
 #
-#epsilon star values from fastEpsilon.R#
+#epsilon star values from fastEpsilon.R (1 step epsilon star)#
 epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)#
 #from 10 step random walks#
 #epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) #
@@ -480,6 +371,304 @@ for (i in 1:length(walkList)){#
     print(i)#
 }#
 save(walkCodes, file="walkCodes.Rdata")#
-print(proc.time() - ptm)
-18191.795 /60
-303.1966/60
+print(proc.time() - ptm)#
+setwd("..")#
+setwd("..")
+coding random walks#
+rm(list=ls())#
+ptm<-proc.time()#
+setwd("walks")#
+setwd("100") #walksize of walk to load#
+load("walks.Rdata")#
+#
+#epsilon star values from fastEpsilon.R (1 step epsilon star)#
+epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)#
+#from 10 step random walks#
+#epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) #
+#
+#negative function because R is stupid (x less than negative y looks like assign value; x<-y)#
+neg <- function(x) -x#
+#
+#function for coding each line of random walk (*-*)#
+line_code <- function(delta_fitness, epsilon){#
+    code <- NA#
+    if (delta_fitness<neg(epsilon)){#
+        code <- neg(1)#
+    }else if (abs(delta_fitness)<=epsilon){#
+        code<-0#
+    }else if (delta_fitness>epsilon){#
+        code<- 1#
+    }#
+    return(code)#
+}#
+#
+#function for coding each pair of steps in random walk (*-*-*)#
+sequence_code <- function(line1, line2){#
+    sequence <- "NA NA"#
+    if (line1==0){#
+        if (line2==1){#
+            sequence <- "0 1"#
+        } else if (line2==neg(1)){#
+            sequence<- "0 -1"#
+        } else if (line2==0){#
+            sequence <- "0 0"#
+        }#
+    } else if (line1==1){#
+        if (line2==0){#
+            sequence <- "1 0"#
+        }else if (line2==neg(1)){#
+            sequence <- "1 -1"#
+        }else if (line2==1){#
+            sequence <- "1 1"#
+        }#
+    } else if (line1==neg(1)){#
+        if (line2==0){#
+            sequence <- "-1 0"#
+        } else if (line2==1){#
+            sequence<- "-1 1"#
+        }else if (line2==neg(1)){#
+            sequence <- "-1 -1"#
+        }#
+    } #
+    return(sequence)#
+}#
+#
+walkCodes <- list()#
+#loop through environments#
+for (i in 1:length(walkList)){#
+    walks <- walkList[[i]]#
+    estar <- epsilon_star[i]#
+    #loop through epsilon values#
+    distributionList <- list() #distribution of sequences over all epsilon values (9 epsilon values: matrix(100 reps x 998 sequences))#
+    epsilonVec <- c(0, estar/128, estar/64, estar/32, estar/16, estar/8, estar/4, estar/2, estar)#
+    for (e in 1:9){#
+        epsilon<- epsilonVec[e]#
+        #loop through replications#
+        codeMatrix <- matrix(0,nrow=ncol(walks), ncol=9) #9 different sequences x num replications#
+        colnames(codeMatrix) <- c("0 1", "0 -1", "1 0", "1 -1", "-1 0", "-1 1", "1 1", "-1 -1", "0 0") #first 6 are rugged, 7-8 are smooth, and 9 is neutral#
+        for (rep in 1:ncol(walks)){#
+            #loop through sequences#
+            for(step in 1:(nrow(walks)-2)){#
+                step1 <- walks[step,rep]#
+                step2 <- walks[step+1,rep]#
+                step3 <- walks[step+2,rep]#
+                #code lines#
+                line1 <- line_code(step2-step1, epsilon)#
+                line2 <- line_code(step3-step2, epsilon)#
+                #code sequences#
+                seq_code <- sequence_code(line1,line2)#
+                #add sequence to codeMatrix#
+                codeMatrix[rep,][seq_code] <- codeMatrix[rep,][seq_code] + 1#
+            }#
+        }#
+        #aggregate over epsilon values#
+        distributionList[[e]] <- codeMatrix#
+    }#
+    walkCodes[[i]] <- distributionList#
+    print(i)#
+}#
+save(walkCodes, file="walkCodes.Rdata")#
+print(proc.time() - ptm)#
+setwd("..")#
+setwd("..")
+walkCodes[[1]]
+walkCodes[[14]]
+coding random walks#
+rm(list=ls())#
+ptm<-proc.time()#
+setwd("walks")#
+setwd("1000") #walksize of walk to load#
+load("walks.Rdata")#
+#
+#epsilon star values from fastEpsilon.R (1 step epsilon star)#
+epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)#
+#from 10 step random walks#
+#epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) #
+#
+#negative function because R is stupid (x less than negative y looks like assign value; x<-y)#
+neg <- function(x) -x#
+#
+#function for coding each line of random walk (*-*)#
+line_code <- function(delta_fitness, epsilon){#
+    code <- NA#
+    if (delta_fitness<neg(epsilon)){#
+        code <- neg(1)#
+    }else if (abs(delta_fitness)<=epsilon){#
+        code<-0#
+    }else if (delta_fitness>epsilon){#
+        code<- 1#
+    }#
+    return(code)#
+}#
+#
+#function for coding each pair of steps in random walk (*-*-*)#
+sequence_code <- function(line1, line2){#
+    sequence <- "NA NA"#
+    if (line1==0){#
+        if (line2==1){#
+            sequence <- "0 1"#
+        } else if (line2==neg(1)){#
+            sequence<- "0 -1"#
+        } else if (line2==0){#
+            sequence <- "0 0"#
+        }#
+    } else if (line1==1){#
+        if (line2==0){#
+            sequence <- "1 0"#
+        }else if (line2==neg(1)){#
+            sequence <- "1 -1"#
+        }else if (line2==1){#
+            sequence <- "1 1"#
+        }#
+    } else if (line1==neg(1)){#
+        if (line2==0){#
+            sequence <- "-1 0"#
+        } else if (line2==1){#
+            sequence<- "-1 1"#
+        }else if (line2==neg(1)){#
+            sequence <- "-1 -1"#
+        }#
+    } #
+    return(sequence)#
+}#
+#
+walkCodes <- list()#
+#loop through environments#
+for (i in 1:length(walkList)){#
+    walks <- walkList[[i]]#
+    estar <- epsilon_star[i]#
+    #loop through epsilon values#
+    distributionList <- list() #distribution of sequences over all epsilon values (9 epsilon values: matrix(100 reps x 998 sequences))#
+    epsilonVec <- c(0, estar/128, estar/64, estar/32, estar/16, estar/8, estar/4, estar/2, estar)#
+    for (e in 1:9){#
+        epsilon<- epsilonVec[e]#
+        #loop through replications#
+        codeMatrix <- matrix(0,nrow=ncol(walks), ncol=9) #9 different sequences x num replications#
+        colnames(codeMatrix) <- c("0 1", "0 -1", "1 0", "1 -1", "-1 0", "-1 1", "1 1", "-1 -1", "0 0") #first 6 are rugged, 7-8 are smooth, and 9 is neutral#
+        for (rep in 1:ncol(walks)){#
+            #loop through sequences#
+            for(step in 1:(nrow(walks)-2)){#
+                step1 <- walks[step,rep]#
+                step2 <- walks[step+1,rep]#
+                step3 <- walks[step+2,rep]#
+                #code lines#
+                line1 <- line_code(step2-step1, epsilon)#
+                line2 <- line_code(step3-step2, epsilon)#
+                #code sequences#
+                seq_code <- sequence_code(line1,line2)#
+                #add sequence to codeMatrix#
+                codeMatrix[rep,][seq_code] <- codeMatrix[rep,][seq_code] + 1#
+            }#
+        }#
+        #aggregate over epsilon values#
+        distributionList[[e]] <- codeMatrix#
+    }#
+    walkCodes[[i]] <- distributionList#
+    print(i)#
+}#
+save(walkCodes, file="walkCodes.Rdata")#
+print(proc.time() - ptm)#
+setwd("..")#
+setwd("..")
+417.475 /28
+417.475 * 14.9
+6220.378/60
+coding random walks#
+rm(list=ls())#
+ptm<-proc.time()#
+setwd("walks")#
+setwd("10000") #walksize of walk to load#
+load("walks.Rdata")#
+#
+#epsilon star values from fastEpsilon.R (1 step epsilon star)#
+epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)#
+#from 10 step random walks#
+#epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) #
+#
+#negative function because R is stupid (x less than negative y looks like assign value; x<-y)#
+neg <- function(x) -x#
+#
+#function for coding each line of random walk (*-*)#
+line_code <- function(delta_fitness, epsilon){#
+    code <- NA#
+    if (delta_fitness<neg(epsilon)){#
+        code <- neg(1)#
+    }else if (abs(delta_fitness)<=epsilon){#
+        code<-0#
+    }else if (delta_fitness>epsilon){#
+        code<- 1#
+    }#
+    return(code)#
+}#
+#
+#function for coding each pair of steps in random walk (*-*-*)#
+sequence_code <- function(line1, line2){#
+    sequence <- "NA NA"#
+    if (line1==0){#
+        if (line2==1){#
+            sequence <- "0 1"#
+        } else if (line2==neg(1)){#
+            sequence<- "0 -1"#
+        } else if (line2==0){#
+            sequence <- "0 0"#
+        }#
+    } else if (line1==1){#
+        if (line2==0){#
+            sequence <- "1 0"#
+        }else if (line2==neg(1)){#
+            sequence <- "1 -1"#
+        }else if (line2==1){#
+            sequence <- "1 1"#
+        }#
+    } else if (line1==neg(1)){#
+        if (line2==0){#
+            sequence <- "-1 0"#
+        } else if (line2==1){#
+            sequence<- "-1 1"#
+        }else if (line2==neg(1)){#
+            sequence <- "-1 -1"#
+        }#
+    } #
+    return(sequence)#
+}#
+#
+walkCodes <- list()#
+#loop through environments#
+for (i in 1:length(walkList)){#
+    walks <- walkList[[i]]#
+    estar <- epsilon_star[i]#
+    #loop through epsilon values#
+    distributionList <- list() #distribution of sequences over all epsilon values (9 epsilon values: matrix(100 reps x 998 sequences))#
+    epsilonVec <- c(0, estar/128, estar/64, estar/32, estar/16, estar/8, estar/4, estar/2, estar)#
+    for (e in 1:9){#
+        epsilon<- epsilonVec[e]#
+        #loop through replications#
+        codeMatrix <- matrix(0,nrow=ncol(walks), ncol=9) #9 different sequences x num replications#
+        colnames(codeMatrix) <- c("0 1", "0 -1", "1 0", "1 -1", "-1 0", "-1 1", "1 1", "-1 -1", "0 0") #first 6 are rugged, 7-8 are smooth, and 9 is neutral#
+        for (rep in 1:ncol(walks)){#
+            #loop through sequences#
+            for(step in 1:(nrow(walks)-2)){#
+                step1 <- walks[step,rep]#
+                step2 <- walks[step+1,rep]#
+                step3 <- walks[step+2,rep]#
+                #code lines#
+                line1 <- line_code(step2-step1, epsilon)#
+                line2 <- line_code(step3-step2, epsilon)#
+                #code sequences#
+                seq_code <- sequence_code(line1,line2)#
+                #add sequence to codeMatrix#
+                codeMatrix[rep,][seq_code] <- codeMatrix[rep,][seq_code] + 1#
+            }#
+        }#
+        #aggregate over epsilon values#
+        distributionList[[e]] <- codeMatrix#
+    }#
+    walkCodes[[i]] <- distributionList#
+    print(i)#
+}#
+save(walkCodes, file="walkCodes.Rdata")#
+print(proc.time() - ptm)#
+setwd("..")#
+setwd("..")
+7894.644 /60
+walkCodes[[1]]
