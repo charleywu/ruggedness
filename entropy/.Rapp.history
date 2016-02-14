@@ -1,674 +1,1760 @@
 1+1
-load("/Users/charleywu/Github/ruggedness/entropy/walks.Rdata")
-load("/Users/charleywu/Github/ruggedness/entropy/Walks/10k/walkCodes.Rdata")
-getwd("")
-setwd("/Users/charleywu/Github/ruggedness/entropy")
-random walks#
-rm(list=ls())#
-ptm<-proc.time()#
-setwd("..") #move to parent folder#
-setwd("environments")#
+p<- c(20,24,14,12,8,9)
+pdf <- p/100
+sum(pdf)
+sum(pdf * log(1/pdf))
+p<- c(20,24,14,12,8,9)
+pdf <- p/sum(p)
+sum(pdf * log(1/pdf))
+1.714596 * .87
+p <- c(1,1,1,1,1,1)
+pdf <- p/100
+sum(pdf * log(1/pdf))
+pdf <- p/6
+sum(pdf * log(1/pdf))
+1.791759 * .06
+p<- c(16,0,30,24, 6,21)
+pdf <- p/100
+pdf
+sum(pdf * log(1/pdf))
+pdf <- c( 0.16, 0.30, 0.24, 0.06, 0.21)
+sum(pdf * log(1/pdf))
+pdf <- p/sum(p)
+pdf
+pdf <- c(0.16494845, 0.30927835, 0.24742268, 0.06185567, 0.21649485)
+sum(pdf * log(1/pdf))
+1.509184 * sum(p)/100
+97/6
+p<- c(16,16,16,16,16,16)
+sum(p)
+p<- c(16,16,16,16,16,17)
+pdf <- p/100
+1.509184 * sum(p)/100
+sum(pdf * log(1/pdf))
+getwd()
+setwd("github/ruggedness/entropy")
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
 #
-steps <- 10#
-stepsize <- 1 #try 10#
-replications <- 100#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
 #
-load("environments.Rdata")#
+load("walkCodes.Rdata")#
+source("SMentropy.R")#
+source("Rf.R")#
 #
-walkList <- list()#
-#loop through environments#
-for (i in 1:length(fitness)){#
-    env <- fitness[[i]]#
-    #output for each walk#
-    walks <- matrix(nrow=steps,ncol=replications)#
-    #loop through replications#
-    for (rep in 1:replications){#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
 #
-        #begin random walks#
-        #sample starting location#
-        startX <- sample(1:1001,1)#
-        startY <- sample(1:1001,1)#
-        #matrix storing fitness values for each step (x,y,fitness)#
-        path <- matrix(nrow=steps,ncol=3)#
-        path[1,] <- c(startX,startY,env[startX,startY])#
-        for (step in 2:steps){#
-            newX <- path[step-1,][1] + sample(0:stepsize,1)#
-            newY <- path[step-1,][2] + sample(0:stepsize,1)#
-                #check if beyond maximum bound#
-            if (newX>1001){#
-                newX <- newX - 1001#
-            }#
-            if (newY>1001){#
-                newY <- newY - 1001#
-            }#
-            path[step,] <- c(newX,newY,env[newX,newY])#
-        }#
-        #add finess value to walks#
-        walks[,rep] <- path[,3]#
-    }#
-    #add fitness values to walk#
-    walkList[[i]] <- walks#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis <- ruggedness(10,10)#
+df$Origin <- ruggedness(0,0)#
+df$NonConcave <- ruggedness(10,0)#
+df$Arimoto16 <- ruggedness(16,2 - 1/16)#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis", "Origin", "NonConcave", "Arimoto16"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf")#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis", "Origin", "NonConcave", "Arimoto16")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+}
+loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    print(sqrt(diag(vcov(fit))))#
+}
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    se <- sqrt(diag(vcov(fit)))#
+    print(se)#
+}
+summary(fit)
+summary(fit)coefficients[ , 2]
+summary(fit)$coefficients[ , 2]
+coef(summary(fit))[, 2]
+anova(Fit)
+anova(fit)
+m = summary(fit)
+m$sigma
+str(m)
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$Arimoto16 <- ruggedness(16,2 - 1/16)#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis", "NonConcave", "Arimoto16"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf")#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis", "NonConcave", "Arimoto16")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$Arimoto16 <- ruggedness(16,2 - 1/16)#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "Arimoto16"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf")#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis", "NonConcave", "Arimoto16")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "Arimoto16")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+ggsave("EntropyPlot.pdf", width=8, height=6)
+source("Rf.R")
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- ruggedness(16,2 - 1/16)#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "Arimoto16"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "Arimoto16")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "ProportionRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "ProportionRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+load("walkCodes2.Rdata")#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- log(exp(ruggedness(1,1)),6)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+#loop through different walk steps#
+#
+dfList <- list()#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #create temporary dataframe#
+    df <- data.frame(envNames)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    df$Shannon <- ruggedness(1,1)#
+    df$Quadratic <- ruggedness(2,2)#
+    df$Hartley <- ruggedness(0,1)#
+    df$Tsallis <- ruggedness(10,10)#
+    #melt#
+    m2 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis"))#
+    colnames(m2) <- c("envNames", "Entropy", "Ruggedness")#
+    m2$walkSize <- rep(walksize, nrow(m2))#
+    #add to list#
+    dfList[[i]] <- m2#
+    setwd("..")#
 }#
 #
-setwd("..")#
-setwd("entropy")#
-setwd("walks")#
-setwd("10")#
-save(walkList, file="walks.Rdata")#
-print(proc.time() - ptm)
-random walks#
-rm(list=ls())#
-ptm<-proc.time()#
-setwd("..") #move to parent folder#
-setwd("environments")#
-#
-steps <- 100#
-stepsize <- 1 #try 10#
-replications <- 100#
-#
-load("environments.Rdata")#
-#
-walkList <- list()#
-#loop through environments#
-for (i in 1:length(fitness)){#
-    env <- fitness[[i]]#
-    #output for each walk#
-    walks <- matrix(nrow=steps,ncol=replications)#
-    #loop through replications#
-    for (rep in 1:replications){#
-#
-        #begin random walks#
-        #sample starting location#
-        startX <- sample(1:1001,1)#
-        startY <- sample(1:1001,1)#
-        #matrix storing fitness values for each step (x,y,fitness)#
-        path <- matrix(nrow=steps,ncol=3)#
-        path[1,] <- c(startX,startY,env[startX,startY])#
-        for (step in 2:steps){#
-            newX <- path[step-1,][1] + sample(0:stepsize,1)#
-            newY <- path[step-1,][2] + sample(0:stepsize,1)#
-                #check if beyond maximum bound#
-            if (newX>1001){#
-                newX <- newX - 1001#
-            }#
-            if (newY>1001){#
-                newY <- newY - 1001#
-            }#
-            path[step,] <- c(newX,newY,env[newX,newY])#
+m2 <- do.call("rbind", dfList)#
+dm <- merge(m1,m2)#
+dm$walkSize <- as.factor(dm$walkSize)#
+dm$Correlation <- rep(0,nrow(dm))#
+#for model, for walkSize, for entropy, find correlation between performance and ruggedness#
+for (model in levels(dm$Model)){#
+    for (walksize in levels(dm$walkSize)){#
+        for (entropy in levels(dm$Entropy)){#
+            dm.sub <-dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]#
+            r <- cor(dm.sub$Performance, dm.sub$Ruggedness)#
+            dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]$Correlation <- r#
         }#
-        #add finess value to walks#
-        walks[,rep] <- path[,3]#
     }#
-    #add fitness values to walk#
-    walkList[[i]] <- walks#
 }#
 #
+P<- ggplot(dm, aes(x=walkSize, y=Correlation, col=Model, shape=Model)) + geom_point()  + labs(x="Walk Size", y= "Correlation (Performance ~ Ruggedness)") + theme_bw() + facet_wrap(~ Entropy, ncol=2, scales="free")#
+ggsave("WalkSizePlot.pdf")
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+#loop through different walk steps#
+#
+dfList <- list()#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #create temporary dataframe#
+    df <- data.frame(envNames)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    df$Shannon <- ruggedness(1,1)#
+    df$Quadratic <- ruggedness(2,2)#
+    df$Hartley <- ruggedness(0,1)#
+    df$Tsallis <- ruggedness(10,10)#
+    #melt#
+    m2 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis"))#
+    colnames(m2) <- c("envNames", "Entropy", "Ruggedness")#
+    m2$walkSize <- rep(walksize, nrow(m2))#
+    #add to list#
+    dfList[[i]] <- m2#
+    setwd("..")#
+}#
+#
+m2 <- do.call("rbind", dfList)#
+dm <- merge(m1,m2)#
+dm$walkSize <- as.factor(dm$walkSize)#
+dm$Correlation <- rep(0,nrow(dm))#
+#for model, for walkSize, for entropy, find correlation between performance and ruggedness#
+for (model in levels(dm$Model)){#
+    for (walksize in levels(dm$walkSize)){#
+        for (entropy in levels(dm$Entropy)){#
+            dm.sub <-dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]#
+            r <- cor(dm.sub$Performance, dm.sub$Ruggedness)#
+            dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]$Correlation <- r#
+        }#
+    }#
+}#
+#
+P<- ggplot(dm, aes(x=walkSize, y=Correlation, col=Model, shape=Model)) + geom_point()  + labs(x="Walk Size", y= "Correlation (Performance ~ Ruggedness)") + theme_bw() + facet_wrap(~ Entropy, ncol=2, scales="free")#
+ggsave("WalkSizePlot.pdf")
+getwd()
+setwd("..")
+getwd()
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+#loop through different walk steps#
+#
+dfList <- list()#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #create temporary dataframe#
+    df <- data.frame(envNames)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    df$Shannon <- ruggedness(1,1)#
+    df$Quadratic <- ruggedness(2,2)#
+    df$Hartley <- ruggedness(0,1)#
+    df$Tsallis <- ruggedness(10,10)#
+    #melt#
+    m2 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis"))#
+    colnames(m2) <- c("envNames", "Entropy", "Ruggedness")#
+    m2$walkSize <- rep(walksize, nrow(m2))#
+    #add to list#
+    dfList[[i]] <- m2#
+    setwd("..")#
+}#
+#
+m2 <- do.call("rbind", dfList)#
+dm <- merge(m1,m2)#
+dm$walkSize <- as.factor(dm$walkSize)#
+dm$Correlation <- rep(0,nrow(dm))#
+#for model, for walkSize, for entropy, find correlation between performance and ruggedness#
+for (model in levels(dm$Model)){#
+    for (walksize in levels(dm$walkSize)){#
+        for (entropy in levels(dm$Entropy)){#
+            dm.sub <-dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]#
+            r <- cor(dm.sub$Performance, dm.sub$Ruggedness)#
+            dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]$Correlation <- r#
+        }#
+    }#
+}#
+#
+P<- ggplot(dm, aes(x=walkSize, y=Correlation, col=Model, shape=Model)) + geom_point()  + labs(x="Walk Size", y= "Correlation (Performance ~ Ruggedness)") + theme_bw() + facet_wrap(~ Entropy, ncol=2, scales="free")#
+ggsave("WalkSizePlot.pdf")
+which part of the sharma-mittal space provides the best correlation to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social  <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+entDF <- data.frame(envNames)#
+gridValues <- c(2^-3, 2^-2, 2^-1, 2^0, 2^1, 2^2, 2^3, 2^4, 2^5)#
+#loop through different walk steps#
+dm <- matrix(0,nrow=0,ncol=5)#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    #loop through different models#
+    for (model in levels(m1$Model)){#
+        perf <- m1[m1$Model == model,]$Performance#
+        #loop through order parameter#
+        for (r in gridValues){#
+            #loop through degree parameter#
+            for (t in gridValues){#
+                Rf <- ruggedness(r,t)#
+                correlation <- cor(perf, Rf)#
+                dm <- rbind(dm, c(model, walksize, r, t, correlation))#
+            }#
+        }#
+    }#
+    setwd("..")#
+}#
 setwd("..")#
-setwd("entropy")#
-setwd("walks")#
+#
+df <- as.data.frame(dm)#
+colnames(df) <- c("Model", "walkSize", "Order", "Degree", "Correlation")#
+df$Correlation <- as.numeric(as.character(df$Correlation))#
+df$Order <- ordered(df$Order, levels = c("0.125", "0.25", "0.5", "1", "2", "4", "8", "16", "32"))#
+df$Degree <- ordered(df$Degree, levels = c("0.125", "0.25", "0.5", "1", "2", "4", "8", "16", "32"))#
+P<- ggplot(df, aes(x=Order, y=Degree)) + geom_tile(aes(fill=Correlation), color="white") + scale_fill_gradient(high="white") + facet_wrap(~walkSize, ncol=2)#
+ggsave("Sharma-Mittal.pdf")
+getwd()
+setwd("..")
+which part of the sharma-mittal space provides the best correlation to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social  <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+entDF <- data.frame(envNames)#
+gridValues <- c(2^-3, 2^-2, 2^-1, 2^0, 2^1, 2^2, 2^3, 2^4, 2^5)#
+#loop through different walk steps#
+dm <- matrix(0,nrow=0,ncol=5)#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    #loop through different models#
+    for (model in levels(m1$Model)){#
+        perf <- m1[m1$Model == model,]$Performance#
+        #loop through order parameter#
+        for (r in gridValues){#
+            #loop through degree parameter#
+            for (t in gridValues){#
+                Rf <- ruggedness(r,t)#
+                correlation <- cor(perf, Rf)#
+                dm <- rbind(dm, c(model, walksize, r, t, correlation))#
+            }#
+        }#
+    }#
+    setwd("..")#
+}#
+setwd("..")#
+#
+df <- as.data.frame(dm)#
+colnames(df) <- c("Model", "walkSize", "Order", "Degree", "Correlation")#
+df$Correlation <- as.numeric(as.character(df$Correlation))#
+df$Order <- ordered(df$Order, levels = c("0.125", "0.25", "0.5", "1", "2", "4", "8", "16", "32"))#
+df$Degree <- ordered(df$Degree, levels = c("0.125", "0.25", "0.5", "1", "2", "4", "8", "16", "32"))#
+P<- ggplot(df, aes(x=Order, y=Degree)) + geom_tile(aes(fill=Correlation), color="white") + scale_fill_gradient(high="white") + facet_wrap(~walkSize, ncol=2)#
+ggsave("Sharma-Mittal.pdf")
+P<- ggplot(df, aes(x=Order, y=Degree)) + geom_tile(aes(fill=Correlation), color="white") + scale_fill_gradient() + facet_wrap(~walkSize, ncol=2)#
+ggsave("Sharma-Mittal.pdf", width = 8, height = 6)
+df$Order <- as.numeric(as.character(df$Order))#
+df$Degree <- as.numeric(as.character(df$Degree))
+P<- ggplot(df, aes(x=Order, y=Degree)) + geom_raster(aes(fill=Correlation), color="white", interpolate = TRUE) + scale_fill_gradient() + facet_wrap(~walkSize, ncol=2)
+print(P)
+P<- ggplot(df, aes(x=Order, y=Degree, fill=Correlation)) + scale_fill_gradient() + facet_wrap(~walkSize, ncol=2) + layer(geom="raster", geom_params=list(interpolate=TRUE))
+print(P)
+P<- ggplot(df, aes(x=Order, y=Degree)) + geom_tile(aes(fill=Correlation), color="white") + scale_fill_gradient() + facet_wrap(~walkSize, ncol=2)
+ggsave("Sharma-Mittal.pdf", width = 8, height = 6)
+which part of the sharma-mittal space provides the best correlation to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social  <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+entDF <- data.frame(envNames)#
+gridValues <- c(2^-3, 2^-2, 2^-1, 2^0, 2^1, 2^2, 2^3, 2^4, 2^5)#
+#loop through different walk steps#
+dm <- matrix(0,nrow=0,ncol=5)#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    #loop through different models#
+    for (model in levels(m1$Model)){#
+        perf <- m1[m1$Model == model,]$Performance#
+        #loop through order parameter#
+        for (r in gridValues){#
+            #loop through degree parameter#
+            for (t in gridValues){#
+                Rf <- ruggedness(r,t)#
+                correlation <- cor(perf, Rf)#
+                dm <- rbind(dm, c(model, walksize, r, t, correlation))#
+            }#
+        }#
+    }#
+    setwd("..")#
+}#
+setwd("..")#
+#
+df <- as.data.frame(dm)#
+colnames(df) <- c("Model", "walkSize", "Order", "Degree", "Correlation")#
+df$Correlation <- as.numeric(as.character(df$Correlation))#
+df$Order <- ordered(df$Order, levels = c("0.125", "0.25", "0.5", "1", "2", "4", "8", "16", "32"))#
+df$Degree <- ordered(df$Degree, levels = c("0.125", "0.25", "0.5", "1", "2", "4", "8", "16", "32"))#
+P<- ggplot(df, aes(x=Order, y=Degree)) + geom_tile(aes(fill=Correlation), color="white") + scale_fill_gradient() + facet_wrap(~walkSize, ncol=2)#
+ggsave("Sharma-Mittal.pdf", width = 8, height = 6)
+P<- ggplot(df, aes(x=Order, y=Degree)) + geom_tile(aes(fill=Correlation), color="white") + scale_fill_gradient(high="red") + facet_wrap(~walkSize, ncol=2)#
+ggsave("Sharma-Mittal.pdf", width = 8, height = 6)
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+#loop through different walk steps#
+#
+dfList <- list()#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #create temporary dataframe#
+    df <- data.frame(envNames)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    df$Shannon <- ruggedness(1,1)#
+    df$Quadratic <- ruggedness(2,2)#
+    df$Hartley <- ruggedness(0,1)#
+    df$Tsallis10 <- ruggedness(10,10)#
+    df$NonConcave <- ruggedness(10,0)#
+    df$PropRugged <- propRugged()#
+    #melt#
+    m2 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+    colnames(m2) <- c("envNames", "Entropy", "Ruggedness")#
+    m2$walkSize <- rep(walksize, nrow(m2))#
+    #add to list#
+    dfList[[i]] <- m2#
+    setwd("..")#
+}#
+#
+m2 <- do.call("rbind", dfList)#
+dm <- merge(m1,m2)#
+dm$walkSize <- as.factor(dm$walkSize)#
+dm$Correlation <- rep(0,nrow(dm))#
+#for model, for walkSize, for entropy, find correlation between performance and ruggedness#
+for (model in levels(dm$Model)){#
+    for (walksize in levels(dm$walkSize)){#
+        for (entropy in levels(dm$Entropy)){#
+            dm.sub <-dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]#
+            r <- cor(dm.sub$Performance, dm.sub$Ruggedness)#
+            dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]$Correlation <- r#
+        }#
+    }#
+}#
+#
+P<- ggplot(dm, aes(x=walkSize, y=Correlation, col=Model, shape=Model)) + geom_point()  + labs(x="Walk Size", y= "Correlation (Performance ~ Ruggedness)") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+ggsave("WalkSizePlot.pdf")
+setwd("..")
+ggsave("WalkSizePlot.pdf", height = 6, width = 8)
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+load("walkCodes.Rdata")#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+#loop through different walk steps#
+#
+dfList <- list()#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #create temporary dataframe#
+    df <- data.frame(envNames)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    df$Shannon <- ruggedness(1,1)#
+    df$Quadratic <- ruggedness(2,2)#
+    df$Hartley <- ruggedness(0,1)#
+    df$Tsallis10 <- ruggedness(10,10)#
+    df$NonConcave <- ruggedness(10,0)#
+    df$PropRugged <- propRugged()#
+    #melt#
+    m2 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+    colnames(m2) <- c("envNames", "Entropy", "Ruggedness")#
+    m2$walkSize <- rep(walksize, nrow(m2))#
+    #add to list#
+    dfList[[i]] <- m2#
+    setwd("..")#
+}#
+setwd("..")#
+#
+m2 <- do.call("rbind", dfList)#
+dm <- merge(m1,m2)#
+dm$walkSize <- as.factor(dm$walkSize)#
+dm$Correlation <- rep(0,nrow(dm))#
+#for model, for walkSize, for entropy, find correlation between performance and ruggedness#
+for (model in levels(dm$Model)){#
+    for (walksize in levels(dm$walkSize)){#
+        for (entropy in levels(dm$Entropy)){#
+            dm.sub <-dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]#
+            r <- cor(dm.sub$Performance, dm.sub$Ruggedness)#
+            dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]$Correlation <- r#
+        }#
+    }#
+}#
+#
+P<- ggplot(dm, aes(x=walkSize, y=Correlation, col=Model, shape=Model)) + geom_point()  + labs(x="Walk Size", y= "Correlation (Performance ~ Ruggedness)") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+ggsave("WalkSizePlot.pdf", height = 6, width = 8)
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+load("walkCodes.Rdata")#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+#loop through different walk steps#
+#
+dfList <- list()#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #create temporary dataframe#
+    df <- data.frame(envNames)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    df$Shannon <- ruggedness(1,1)#
+    df$Quadratic <- ruggedness(2,2)#
+    df$Hartley <- ruggedness(0,1)#
+    df$Tsallis10 <- ruggedness(10,10)#
+    df$NonConcave <- ruggedness(10,0)#
+    df$PropRugged <- propRugged()#
+    #melt#
+    m2 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+    colnames(m2) <- c("envNames", "Entropy", "Ruggedness")#
+    m2$walkSize <- rep(walksize, nrow(m2))#
+    #add to list#
+    dfList[[i]] <- m2#
+    setwd("..")#
+}#
+setwd("..")#
+#
+m2 <- do.call("rbind", dfList)#
+dm <- merge(m1,m2)#
+dm$walkSize <- as.factor(dm$walkSize)#
+dm$Correlation <- rep(0,nrow(dm))#
+#for model, for walkSize, for entropy, find correlation between performance and ruggedness#
+for (model in levels(dm$Model)){#
+    for (walksize in levels(dm$walkSize)){#
+        for (entropy in levels(dm$Entropy)){#
+            dm.sub <-dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]#
+            r <- cor(dm.sub$Ruggedness,dm.sub$Performance)#
+            dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]$Correlation <- r#
+        }#
+    }#
+}#
+#
+P<- ggplot(dm, aes(x=walkSize, y=Correlation, col=Model, shape=Model)) + geom_point()  + labs(x="Walk Size", y= "Correlation (Performance ~ Ruggedness)") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+ggsave("WalkSizePlot.pdf", height = 6, width = 8)
+dm
+dm.sub <-dm[dm$Model == "Social" & dm$walkSize == "10000" & dm$Entropy == entropy,]
+dm.sub <-dm[dm$Model == "Social" & dm$walkSize == "10000" & dm$Entropy == "",]
+dm.sub <-dm[dm$Model == "Social" & dm$walkSize == "10000" & dm$Entropy == "Shannon",]
+dm.sub
+cor(dm.sub$Ruggedness,dm.sub$Performance)
+wm <- dm.sub
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+load("walkCodes.Rdata")#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+wm
+L
+dm.sub
+cor(dm.sub$Ruggedness~dm.sub$Performance)
+cor(dm.sub$Ruggedness,dm.sub$Performance)
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+#loop through different walk steps#
+#
+dfList <- list()#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #create temporary dataframe#
+    df <- data.frame(envNames)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    df$Shannon <- ruggedness(1,1)#
+    df$Quadratic <- ruggedness(2,2)#
+    df$Hartley <- ruggedness(0,1)#
+    df$Tsallis10 <- ruggedness(10,10)#
+    df$NonConcave <- ruggedness(10,0)#
+    df$PropRugged <- propRugged()#
+    #melt#
+    m2 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+    colnames(m2) <- c("envNames", "Entropy", "Ruggedness")#
+    m2$walkSize <- rep(walksize, nrow(m2))#
+    #add to list#
+    dfList[[i]] <- m2#
+    setwd("..")#
+}#
+setwd("..")#
+#
+m2 <- do.call("rbind", dfList)#
+dm <- merge(m1,m2)#
+dm$walkSize <- as.factor(dm$walkSize)#
+dm$Correlation <- rep(0,nrow(dm))#
+#for model, for walkSize, for entropy, find correlation between performance and ruggedness#
+for (model in levels(dm$Model)){#
+    for (walksize in levels(dm$walkSize)){#
+        for (entropy in levels(dm$Entropy)){#
+            dm.sub <-dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]#
+            r <- cor(dm.sub$Ruggedness,dm.sub$Performance)#
+            dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]$Correlation <- r#
+        }#
+    }#
+}#
+#
+P<- ggplot(dm, aes(x=walkSize, y=Correlation, col=Model, shape=Model)) + geom_point()  + labs(x="Walk Size", y= "Correlation (Performance ~ Ruggedness)") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+ggsave("WalkSizePlot.pdf", height = 6, width = 8)
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+load("walkCodes.Rdata")#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+df$Social <- Social#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m1) <- c("envNames", "Model", "Performance")#
+#
+#loop through different walk steps#
+#
+dfList <- list()#
+walkSizes <- c("10", "100", "1000", "10000")#
+setwd("Walks")#
+for (i in 1:4){#
+    walksize <- walkSizes[i]#
+    setwd(walksize)#
+    #create temporary dataframe#
+    df <- data.frame(envNames)#
+    #load codes and compute entropy#
+    load("walkCodes.Rdata")#
+    df$Shannon <- ruggedness(1,1)#
+    df$Quadratic <- ruggedness(2,2)#
+    df$Hartley <- ruggedness(0,1)#
+    df$Tsallis10 <- ruggedness(10,10)#
+    df$NonConcave <- ruggedness(10,0)#
+    df$PropRugged <- propRugged()#
+    #melt#
+    m2 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+    colnames(m2) <- c("envNames", "Entropy", "Ruggedness")#
+    m2$walkSize <- rep(walksize, nrow(m2))#
+    #add to list#
+    dfList[[i]] <- m2#
+    setwd("..")#
+}#
+setwd("..")#
+#
+m2 <- do.call("rbind", dfList)#
+dm <- merge(m1,m2)#
+dm$walkSize <- as.factor(dm$walkSize)#
+dm$Correlation <- rep(0,nrow(dm))#
+#for model, for walkSize, for entropy, find correlation between performance and ruggedness#
+for (model in levels(dm$Model)){#
+    for (walksize in levels(dm$walkSize)){#
+        for (entropy in levels(dm$Entropy)){#
+            dm.sub <-dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]#
+            r <- cor(dm.sub$Ruggedness,dm.sub$Performance)#
+            dm[dm$Model == model & dm$walkSize == walksize & dm$Entropy == entropy,]$Correlation <- r#
+        }#
+    }#
+}#
+#
+P<- ggplot(dm, aes(x=walkSize, y=Correlation, col=Model, shape=Model)) + geom_point()  + labs(x="Walk Size", y= "Correlation (Performance ~ Ruggedness)") + theme_bw() + facet_wrap(~ Entropy, ncol=3)#
+ggsave("WalkSizePlot.pdf", height = 6, width = 8)
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+setwd("Walks")#
 setwd("100")#
-save(walkList, file="walks.Rdata")#
-print(proc.time() - ptm)
+load("walkCodes.Rdata")#
 setwd("..")#
-setwd("..")
-random walks#
-rm(list=ls())#
-ptm<-proc.time()#
-setwd("..") #move to parent folder#
-setwd("environments")#
-#
-steps <- 100#
-stepsize <- 1 #try 10#
-replications <- 100#
-#
-load("environments.Rdata")#
-#
-walkList <- list()#
-#loop through environments#
-for (i in 1:length(fitness)){#
-    env <- fitness[[i]]#
-    #output for each walk#
-    walks <- matrix(nrow=steps,ncol=replications)#
-    #loop through replications#
-    for (rep in 1:replications){#
-#
-        #begin random walks#
-        #sample starting location#
-        startX <- sample(1:1001,1)#
-        startY <- sample(1:1001,1)#
-        #matrix storing fitness values for each step (x,y,fitness)#
-        path <- matrix(nrow=steps,ncol=3)#
-        path[1,] <- c(startX,startY,env[startX,startY])#
-        for (step in 2:steps){#
-            newX <- path[step-1,][1] + sample(0:stepsize,1)#
-            newY <- path[step-1,][2] + sample(0:stepsize,1)#
-                #check if beyond maximum bound#
-            if (newX>1001){#
-                newX <- newX - 1001#
-            }#
-            if (newY>1001){#
-                newY <- newY - 1001#
-            }#
-            path[step,] <- c(newX,newY,env[newX,newY])#
-        }#
-        #add finess value to walks#
-        walks[,rep] <- path[,3]#
-    }#
-    #add fitness values to walk#
-    walkList[[i]] <- walks#
-}#
-#
 setwd("..")#
-setwd("entropy")#
-setwd("walks")#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot100.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+#Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+setwd("Walks")#
 setwd("100")#
-save(walkList, file="walks.Rdata")#
-print(proc.time() - ptm)#
+load("walkCodes.Rdata")#
 setwd("..")#
-setwd("..")
-random walks#
-rm(list=ls())#
-ptm<-proc.time()#
-setwd("..") #move to parent folder#
-setwd("environments")#
-#
-steps <- 1000#
-stepsize <- 1 #try 10#
-replications <- 100#
-#
-load("environments.Rdata")#
-#
-walkList <- list()#
-#loop through environments#
-for (i in 1:length(fitness)){#
-    env <- fitness[[i]]#
-    #output for each walk#
-    walks <- matrix(nrow=steps,ncol=replications)#
-    #loop through replications#
-    for (rep in 1:replications){#
-#
-        #begin random walks#
-        #sample starting location#
-        startX <- sample(1:1001,1)#
-        startY <- sample(1:1001,1)#
-        #matrix storing fitness values for each step (x,y,fitness)#
-        path <- matrix(nrow=steps,ncol=3)#
-        path[1,] <- c(startX,startY,env[startX,startY])#
-        for (step in 2:steps){#
-            newX <- path[step-1,][1] + sample(0:stepsize,1)#
-            newY <- path[step-1,][2] + sample(0:stepsize,1)#
-                #check if beyond maximum bound#
-            if (newX>1001){#
-                newX <- newX - 1001#
-            }#
-            if (newY>1001){#
-                newY <- newY - 1001#
-            }#
-            path[step,] <- c(newX,newY,env[newX,newY])#
-        }#
-        #add finess value to walks#
-        walks[,rep] <- path[,3]#
-    }#
-    #add fitness values to walk#
-    walkList[[i]] <- walks#
-}#
-#
 setwd("..")#
-setwd("entropy")#
-setwd("walks")#
-setwd("1000")#
-save(walkList, file="walks.Rdata")#
-print(proc.time() - ptm)#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$Social <- Social#
+df$hillClimbing <- hillClimbing#
+df$random <- random#
+#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("hillClimbing", "Random"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot100RandHill.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "hillClimbing"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+#Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+setwd("Walks")#
+setwd("100")#
+load("walkCodes.Rdata")#
 setwd("..")#
-setwd("..")
-steps <- 10000
-random walks#
-rm(list=ls())#
-ptm<-proc.time()#
-setwd("..") #move to parent folder#
-setwd("environments")#
-#
-steps <- 10000#
-stepsize <- 1 #try 10#
-replications <- 100#
-#
-load("environments.Rdata")#
-#
-walkList <- list()#
-#loop through environments#
-for (i in 1:length(fitness)){#
-    env <- fitness[[i]]#
-    #output for each walk#
-    walks <- matrix(nrow=steps,ncol=replications)#
-    #loop through replications#
-    for (rep in 1:replications){#
-#
-        #begin random walks#
-        #sample starting location#
-        startX <- sample(1:1001,1)#
-        startY <- sample(1:1001,1)#
-        #matrix storing fitness values for each step (x,y,fitness)#
-        path <- matrix(nrow=steps,ncol=3)#
-        path[1,] <- c(startX,startY,env[startX,startY])#
-        for (step in 2:steps){#
-            newX <- path[step-1,][1] + sample(0:stepsize,1)#
-            newY <- path[step-1,][2] + sample(0:stepsize,1)#
-                #check if beyond maximum bound#
-            if (newX>1001){#
-                newX <- newX - 1001#
-            }#
-            if (newY>1001){#
-                newY <- newY - 1001#
-            }#
-            path[step,] <- c(newX,newY,env[newX,newY])#
-        }#
-        #add finess value to walks#
-        walks[,rep] <- path[,3]#
-    }#
-    #add fitness values to walk#
-    walkList[[i]] <- walks#
-}#
-#
 setwd("..")#
-setwd("entropy")#
-setwd("walks")#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+#df$Social <- Social#
+df$hillClimbing <- hillClimbing#
+df$random <- random#
+#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("hillClimbing", "random"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot100RandHill.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "hillClimbing"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "random"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "hillClimbing"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+setwd("Walks")#
+setwd("100")#
+load("walkCodes.Rdata")#
+setwd("..")#
+setwd("..")#
+source("SMentropy.R")#
+source("Rf.R")#
+#
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
+#
+df <- data.frame(envNames)#
+df$Social <- Social#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
+#
+df$Shannon <- ruggedness(1,1)#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
+#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
+#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlot100.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Shannon","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+setwd("Walks")#
 setwd("10000")#
-save(walkList, file="walks.Rdata")#
-print(proc.time() - ptm)#
+load("walkCodes.Rdata")#
 setwd("..")#
-setwd("..")
-coding random walks#
-rm(list=ls())#
-ptm<-proc.time()#
-setwd("walks")#
-setwd("10") #walksize of walk to load#
-load("walks.Rdata")#
-#
-#epsilon star values from fastEpsilon.R (1 step epsilon star)#
-epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)#
-#from 10 step random walks#
-#epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) #
-#
-#negative function because R is stupid (x less than negative y looks like assign value; x<-y)#
-neg <- function(x) -x#
-#
-#function for coding each line of random walk (*-*)#
-line_code <- function(delta_fitness, epsilon){#
-    code <- NA#
-    if (delta_fitness<neg(epsilon)){#
-        code <- neg(1)#
-    }else if (abs(delta_fitness)<=epsilon){#
-        code<-0#
-    }else if (delta_fitness>epsilon){#
-        code<- 1#
-    }#
-    return(code)#
-}#
-#
-#function for coding each pair of steps in random walk (*-*-*)#
-sequence_code <- function(line1, line2){#
-    sequence <- "NA NA"#
-    if (line1==0){#
-        if (line2==1){#
-            sequence <- "0 1"#
-        } else if (line2==neg(1)){#
-            sequence<- "0 -1"#
-        } else if (line2==0){#
-            sequence <- "0 0"#
-        }#
-    } else if (line1==1){#
-        if (line2==0){#
-            sequence <- "1 0"#
-        }else if (line2==neg(1)){#
-            sequence <- "1 -1"#
-        }else if (line2==1){#
-            sequence <- "1 1"#
-        }#
-    } else if (line1==neg(1)){#
-        if (line2==0){#
-            sequence <- "-1 0"#
-        } else if (line2==1){#
-            sequence<- "-1 1"#
-        }else if (line2==neg(1)){#
-            sequence <- "-1 -1"#
-        }#
-    } #
-    return(sequence)#
-}#
-#
-walkCodes <- list()#
-#loop through environments#
-for (i in 1:length(walkList)){#
-    walks <- walkList[[i]]#
-    estar <- epsilon_star[i]#
-    #loop through epsilon values#
-    distributionList <- list() #distribution of sequences over all epsilon values (9 epsilon values: matrix(100 reps x 998 sequences))#
-    epsilonVec <- c(0, estar/128, estar/64, estar/32, estar/16, estar/8, estar/4, estar/2, estar)#
-    for (e in 1:9){#
-        epsilon<- epsilonVec[e]#
-        #loop through replications#
-        codeMatrix <- matrix(0,nrow=ncol(walks), ncol=9) #9 different sequences x num replications#
-        colnames(codeMatrix) <- c("0 1", "0 -1", "1 0", "1 -1", "-1 0", "-1 1", "1 1", "-1 -1", "0 0") #first 6 are rugged, 7-8 are smooth, and 9 is neutral#
-        for (rep in 1:ncol(walks)){#
-            #loop through sequences#
-            for(step in 1:(nrow(walks)-2)){#
-                step1 <- walks[step,rep]#
-                step2 <- walks[step+1,rep]#
-                step3 <- walks[step+2,rep]#
-                #code lines#
-                line1 <- line_code(step2-step1, epsilon)#
-                line2 <- line_code(step3-step2, epsilon)#
-                #code sequences#
-                seq_code <- sequence_code(line1,line2)#
-                #add sequence to codeMatrix#
-                codeMatrix[rep,][seq_code] <- codeMatrix[rep,][seq_code] + 1#
-            }#
-        }#
-        #aggregate over epsilon values#
-        distributionList[[e]] <- codeMatrix#
-    }#
-    walkCodes[[i]] <- distributionList#
-    print(i)#
-}#
-save(walkCodes, file="walkCodes.Rdata")#
-print(proc.time() - ptm)#
 setwd("..")#
-setwd("..")
-coding random walks#
-rm(list=ls())#
-ptm<-proc.time()#
-setwd("walks")#
-setwd("100") #walksize of walk to load#
-load("walks.Rdata")#
+source("SMentropy.R")#
+source("Rf.R")#
 #
-#epsilon star values from fastEpsilon.R (1 step epsilon star)#
-epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)#
-#from 10 step random walks#
-#epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) #
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
 #
-#negative function because R is stupid (x less than negative y looks like assign value; x<-y)#
-neg <- function(x) -x#
+df <- data.frame(envNames)#
+df$Social <- Social#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
 #
-#function for coding each line of random walk (*-*)#
-line_code <- function(delta_fitness, epsilon){#
-    code <- NA#
-    if (delta_fitness<neg(epsilon)){#
-        code <- neg(1)#
-    }else if (abs(delta_fitness)<=epsilon){#
-        code<-0#
-    }else if (delta_fitness>epsilon){#
-        code<- 1#
-    }#
-    return(code)#
-}#
+df$Malan <- Malanruggedness()#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
 #
-#function for coding each pair of steps in random walk (*-*-*)#
-sequence_code <- function(line1, line2){#
-    sequence <- "NA NA"#
-    if (line1==0){#
-        if (line2==1){#
-            sequence <- "0 1"#
-        } else if (line2==neg(1)){#
-            sequence<- "0 -1"#
-        } else if (line2==0){#
-            sequence <- "0 0"#
-        }#
-    } else if (line1==1){#
-        if (line2==0){#
-            sequence <- "1 0"#
-        }else if (line2==neg(1)){#
-            sequence <- "1 -1"#
-        }else if (line2==1){#
-            sequence <- "1 1"#
-        }#
-    } else if (line1==neg(1)){#
-        if (line2==0){#
-            sequence <- "-1 0"#
-        } else if (line2==1){#
-            sequence<- "-1 1"#
-        }else if (line2==neg(1)){#
-            sequence <- "-1 -1"#
-        }#
-    } #
-    return(sequence)#
-}#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Malan","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
 #
-walkCodes <- list()#
-#loop through environments#
-for (i in 1:length(walkList)){#
-    walks <- walkList[[i]]#
-    estar <- epsilon_star[i]#
-    #loop through epsilon values#
-    distributionList <- list() #distribution of sequences over all epsilon values (9 epsilon values: matrix(100 reps x 998 sequences))#
-    epsilonVec <- c(0, estar/128, estar/64, estar/32, estar/16, estar/8, estar/4, estar/2, estar)#
-    for (e in 1:9){#
-        epsilon<- epsilonVec[e]#
-        #loop through replications#
-        codeMatrix <- matrix(0,nrow=ncol(walks), ncol=9) #9 different sequences x num replications#
-        colnames(codeMatrix) <- c("0 1", "0 -1", "1 0", "1 -1", "-1 0", "-1 1", "1 1", "-1 -1", "0 0") #first 6 are rugged, 7-8 are smooth, and 9 is neutral#
-        for (rep in 1:ncol(walks)){#
-            #loop through sequences#
-            for(step in 1:(nrow(walks)-2)){#
-                step1 <- walks[step,rep]#
-                step2 <- walks[step+1,rep]#
-                step3 <- walks[step+2,rep]#
-                #code lines#
-                line1 <- line_code(step2-step1, epsilon)#
-                line2 <- line_code(step3-step2, epsilon)#
-                #code sequences#
-                seq_code <- sequence_code(line1,line2)#
-                #add sequence to codeMatrix#
-                codeMatrix[rep,][seq_code] <- codeMatrix[rep,][seq_code] + 1#
-            }#
-        }#
-        #aggregate over epsilon values#
-        distributionList[[e]] <- codeMatrix#
-    }#
-    walkCodes[[i]] <- distributionList#
-    print(i)#
-}#
-save(walkCodes, file="walkCodes.Rdata")#
-print(proc.time() - ptm)#
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlotMalan10000.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Malan","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
+Ruggedness to performance#
+library(reshape2)#
+library(ggplot2)#
+require(rje)#
+library(directlabels)#
+library(ggrepel)#
+#
+#from Barckozi, Analytis, & Wu (2016)#
+#hillClimbing <- c(0.1639468, 0.8280546, 0.2616505, 0.7067217, 0.6742425, 0.2740507, 0.6408546, 0.9148404, 0.849022, 0.7442067, 0.5362564, 0.07194061, 0.6887596, 0.6127429)#
+#random <- c(0.4890942, 0.9496214, 0.6319627, 0.8390647, 0.9679674, 0.6768137, 0.824881, 0.9876574, 0.9815164, 0.8827425, 0.6818602, 0.4323129, 0.8383287, 0.7272975)#
+Social <- c(0.7671833, 0.9920558, 0.8937955, 0.949713, 0.9912987, 0.9499782, 0.9599123, 0.9969064, 0.9954847, 0.9644195, 0.8904062, 0.8793531, 0.9579353, 0.9319516)#
+setwd("Walks")#
+setwd("100")#
+load("walkCodes.Rdata")#
 setwd("..")#
-setwd("..")
-walkCodes[[1]]
-walkCodes[[14]]
-coding random walks#
-rm(list=ls())#
-ptm<-proc.time()#
-setwd("walks")#
-setwd("1000") #walksize of walk to load#
-load("walks.Rdata")#
-#
-#epsilon star values from fastEpsilon.R (1 step epsilon star)#
-epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)#
-#from 10 step random walks#
-#epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) #
-#
-#negative function because R is stupid (x less than negative y looks like assign value; x<-y)#
-neg <- function(x) -x#
-#
-#function for coding each line of random walk (*-*)#
-line_code <- function(delta_fitness, epsilon){#
-    code <- NA#
-    if (delta_fitness<neg(epsilon)){#
-        code <- neg(1)#
-    }else if (abs(delta_fitness)<=epsilon){#
-        code<-0#
-    }else if (delta_fitness>epsilon){#
-        code<- 1#
-    }#
-    return(code)#
-}#
-#
-#function for coding each pair of steps in random walk (*-*-*)#
-sequence_code <- function(line1, line2){#
-    sequence <- "NA NA"#
-    if (line1==0){#
-        if (line2==1){#
-            sequence <- "0 1"#
-        } else if (line2==neg(1)){#
-            sequence<- "0 -1"#
-        } else if (line2==0){#
-            sequence <- "0 0"#
-        }#
-    } else if (line1==1){#
-        if (line2==0){#
-            sequence <- "1 0"#
-        }else if (line2==neg(1)){#
-            sequence <- "1 -1"#
-        }else if (line2==1){#
-            sequence <- "1 1"#
-        }#
-    } else if (line1==neg(1)){#
-        if (line2==0){#
-            sequence <- "-1 0"#
-        } else if (line2==1){#
-            sequence<- "-1 1"#
-        }else if (line2==neg(1)){#
-            sequence <- "-1 -1"#
-        }#
-    } #
-    return(sequence)#
-}#
-#
-walkCodes <- list()#
-#loop through environments#
-for (i in 1:length(walkList)){#
-    walks <- walkList[[i]]#
-    estar <- epsilon_star[i]#
-    #loop through epsilon values#
-    distributionList <- list() #distribution of sequences over all epsilon values (9 epsilon values: matrix(100 reps x 998 sequences))#
-    epsilonVec <- c(0, estar/128, estar/64, estar/32, estar/16, estar/8, estar/4, estar/2, estar)#
-    for (e in 1:9){#
-        epsilon<- epsilonVec[e]#
-        #loop through replications#
-        codeMatrix <- matrix(0,nrow=ncol(walks), ncol=9) #9 different sequences x num replications#
-        colnames(codeMatrix) <- c("0 1", "0 -1", "1 0", "1 -1", "-1 0", "-1 1", "1 1", "-1 -1", "0 0") #first 6 are rugged, 7-8 are smooth, and 9 is neutral#
-        for (rep in 1:ncol(walks)){#
-            #loop through sequences#
-            for(step in 1:(nrow(walks)-2)){#
-                step1 <- walks[step,rep]#
-                step2 <- walks[step+1,rep]#
-                step3 <- walks[step+2,rep]#
-                #code lines#
-                line1 <- line_code(step2-step1, epsilon)#
-                line2 <- line_code(step3-step2, epsilon)#
-                #code sequences#
-                seq_code <- sequence_code(line1,line2)#
-                #add sequence to codeMatrix#
-                codeMatrix[rep,][seq_code] <- codeMatrix[rep,][seq_code] + 1#
-            }#
-        }#
-        #aggregate over epsilon values#
-        distributionList[[e]] <- codeMatrix#
-    }#
-    walkCodes[[i]] <- distributionList#
-    print(i)#
-}#
-save(walkCodes, file="walkCodes.Rdata")#
-print(proc.time() - ptm)#
 setwd("..")#
-setwd("..")
-417.475 /28
-417.475 * 14.9
-6220.378/60
-coding random walks#
-rm(list=ls())#
-ptm<-proc.time()#
-setwd("walks")#
-setwd("10000") #walksize of walk to load#
-load("walks.Rdata")#
+source("SMentropy.R")#
+source("Rf.R")#
 #
-#epsilon star values from fastEpsilon.R (1 step epsilon star)#
-epsilon_star <- c(0.016756621, 0.003327951, 0.005683390, 0.032014352, 0.003956948, 0.034378054, 0.002517841, 0.009171281, 0.013481127, 0.013129699, 0.001362400, 0.001296913, 0.012938648, 0.001057927)#
-#from 10 step random walks#
-#epsilon_star <- c(0.14215015, 0.81185975, 0.55446881, 0.50626783, 0.03850807, 0.25362396,0.35231084, 0.28750825, 0.43181304, 0.16201408, 0.79754580, 0.67709166, 0.26071785, 0.43970627) #
+envNames <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert")#
 #
-#negative function because R is stupid (x less than negative y looks like assign value; x<-y)#
-neg <- function(x) -x#
+df <- data.frame(envNames)#
+df$Social <- Social#
+#df$hillClimbing <- hillClimbing#
+#df$random <- random#
 #
-#function for coding each line of random walk (*-*)#
-line_code <- function(delta_fitness, epsilon){#
-    code <- NA#
-    if (delta_fitness<neg(epsilon)){#
-        code <- neg(1)#
-    }else if (abs(delta_fitness)<=epsilon){#
-        code<-0#
-    }else if (delta_fitness>epsilon){#
-        code<- 1#
-    }#
-    return(code)#
-}#
+df$Malan <- Malanruggedness()#
+df$Quadratic <- ruggedness(2,2)#
+df$Hartley <- ruggedness(0,1)#
+df$Tsallis10 <- ruggedness(10,10)#
+df$NonConcave <- ruggedness(10,0)#
+df$PropRugged <- propRugged()#
 #
-#function for coding each pair of steps in random walk (*-*-*)#
-sequence_code <- function(line1, line2){#
-    sequence <- "NA NA"#
-    if (line1==0){#
-        if (line2==1){#
-            sequence <- "0 1"#
-        } else if (line2==neg(1)){#
-            sequence<- "0 -1"#
-        } else if (line2==0){#
-            sequence <- "0 0"#
-        }#
-    } else if (line1==1){#
-        if (line2==0){#
-            sequence <- "1 0"#
-        }else if (line2==neg(1)){#
-            sequence <- "1 -1"#
-        }else if (line2==1){#
-            sequence <- "1 1"#
-        }#
-    } else if (line1==neg(1)){#
-        if (line2==0){#
-            sequence <- "-1 0"#
-        } else if (line2==1){#
-            sequence<- "-1 1"#
-        }else if (line2==neg(1)){#
-            sequence <- "-1 -1"#
-        }#
-    } #
-    return(sequence)#
-}#
+m1 <- melt(df, id.vars="envNames", measure.vars=c("Malan","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged"))#
+colnames(m1) <- c("envNames", "Entropy", "Ruggedness")#
+m2 <- melt(df, id.vars="envNames", measure.vars=c("Social"))#
+colnames(m2) <- c("envNames", "Model", "Performance")#
 #
-walkCodes <- list()#
-#loop through environments#
-for (i in 1:length(walkList)){#
-    walks <- walkList[[i]]#
-    estar <- epsilon_star[i]#
-    #loop through epsilon values#
-    distributionList <- list() #distribution of sequences over all epsilon values (9 epsilon values: matrix(100 reps x 998 sequences))#
-    epsilonVec <- c(0, estar/128, estar/64, estar/32, estar/16, estar/8, estar/4, estar/2, estar)#
-    for (e in 1:9){#
-        epsilon<- epsilonVec[e]#
-        #loop through replications#
-        codeMatrix <- matrix(0,nrow=ncol(walks), ncol=9) #9 different sequences x num replications#
-        colnames(codeMatrix) <- c("0 1", "0 -1", "1 0", "1 -1", "-1 0", "-1 1", "1 1", "-1 -1", "0 0") #first 6 are rugged, 7-8 are smooth, and 9 is neutral#
-        for (rep in 1:ncol(walks)){#
-            #loop through sequences#
-            for(step in 1:(nrow(walks)-2)){#
-                step1 <- walks[step,rep]#
-                step2 <- walks[step+1,rep]#
-                step3 <- walks[step+2,rep]#
-                #code lines#
-                line1 <- line_code(step2-step1, epsilon)#
-                line2 <- line_code(step3-step2, epsilon)#
-                #code sequences#
-                seq_code <- sequence_code(line1,line2)#
-                #add sequence to codeMatrix#
-                codeMatrix[rep,][seq_code] <- codeMatrix[rep,][seq_code] + 1#
-            }#
-        }#
-        #aggregate over epsilon values#
-        distributionList[[e]] <- codeMatrix#
-    }#
-    walkCodes[[i]] <- distributionList#
-    print(i)#
-}#
-save(walkCodes, file="walkCodes.Rdata")#
-print(proc.time() - ptm)#
-setwd("..")#
-setwd("..")
-7894.644 /60
-walkCodes[[1]]
+dm <- merge(m1,m2)#
+#
+P<- ggplot(dm, aes(x=Ruggedness, y=Performance, col=Model, shape = Model)) + geom_point() + stat_smooth(method=lm)  + labs(x="Ruggedness (Rf)", y= "Average Payoff") + theme_bw() + facet_wrap(~ Entropy, ncol=3, scales="free")#
+#
+ggsave("EntropyPlotMalan100.pdf", width=8, height=6)#
+#
+#correlations#
+#
+ents <- c("Malan","Quadratic", "Hartley", "Tsallis10", "NonConcave", "PropRugged")#
+#loop through entropy measures#
+for (ent in ents){#
+    print(ent)#
+    dm.sub <- subset(dm, Entropy==ent)#
+    L <- dm.sub$Model == "Social"#
+    print(cor(dm.sub[L,]$Ruggedness, dm.sub[L,]$Performance))#
+    fit <- lm(dm.sub[L,]$Ruggedness ~ dm.sub[L,]$Performance)#
+    rse<-summary(fit)$sigma#
+    print(rse)#
+}
