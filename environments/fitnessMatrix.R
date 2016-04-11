@@ -26,7 +26,7 @@ for (i in 1:14){#loop through environments
 	#add to output list
 	fitness[[i]] <- fitnessMatrix
 }
-
+#todo: add masonWatts function, which is not composed sequentially
 save(fitness, file="environments.Rdata")
 
 print(proc.time() - ptm)

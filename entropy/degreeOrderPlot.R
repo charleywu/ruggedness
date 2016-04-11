@@ -29,9 +29,10 @@ gridValues <- c(2^-3, 2^-2, 2^-1, 2^0, 2^1, 2^2, 2^3, 2^4, 2^5)
 
 #loop through different walk steps
 dm <- matrix(0,nrow=0,ncol=5)
-walkSizes <- c("10", "100", "1000", "10000")
+#walkSizes <- c("10", "100", "1000", "10000")
+walkSizes <-c("100")
 setwd("Walks")
-for (i in 1:4){
+for (i in 1:length(walkSizes)){
 	walksize <- walkSizes[i]
 	setwd(walksize)
 	#load codes and compute entropy
@@ -64,4 +65,4 @@ df$Degree <- ordered(df$Degree, levels = c("0.125", "0.25", "0.5", "1", "2", "4"
 P<- ggplot(df, aes(x=Order, y=Degree)) + geom_tile(aes(fill=Correlation), color="white") + scale_fill_gradient(high="red") + facet_wrap(~walkSize, ncol=2)
 
 
-ggsave("Sharma-Mittal.pdf", width = 8, height = 6)
+ggsave("Sharma-Mittal100.pdf", width = 8, height = 6)

@@ -1,3 +1,5 @@
+
+
 ackley <- function(xx, a=20, b=0.2, c=2*pi)
 {
   ##########################################################################
@@ -748,4 +750,44 @@ nk <- function(xx){
   y <- NKfunc(vec)
 
   return(y) 
+}
+#environment from Mason & Watts
+#todo: Do we keep it as a 100x100 grid, or do we interpolate it to fit on a 1000 x 1000 grid to be consistent with out simulations?
+library(akima)
+MasonWatts<-function(){
+  L <-100 #LxL grid
+  R <- 3 #variance term
+  rho <- .7
+  #1. create function matrix as a unimodal bivariate Gaussian with the mean randomly chosen, with variance R
+  #todo
+  fitnessMatrix <- matrix(0, ncol=L, nrow =L)
+  #2. compute psuedorandom Perlin noise
+  #2a loop through octaves and randomly draw values
+  for (omega in 3:7){
+    octave <- 2^omega
+    octaveMatrix <- matrix(0,ncol=L, nrow=L)
+    for (x in seq(1,L,octave)){
+      for (y in seq(1,L,octave)){
+        #assign location in octave matrix a random number
+        octaveMatrix[x,y] <-  runif(1, min = 0, max = 1)
+      }
+    }
+    #2b. smooth values of all cell values using bicubic interpolation
+    #vector of values to interpolate, that were not in the octave
+    notInOctave <- seq(1:L) [! seq(1:L) %in% seq(1,L,octave)]
+    #TODO: get this to work
+    #http://www.inside-r.org/packages/cran/akima/docs/bicubic.grid
+    octaveMatrix <- bicubic.grid(seq(1:L), seq(1:L), octaveMatrix, 1, 1) 
+    
+    #2c. scale matrix by the persistence paramter  
+    octaveMatrix <- octaveMatrix/rho^omega
+
+    #3. sum together
+    fitnessMatrix <- fitnessMatrix + octaveMatrix
+  }
+
+  #3 continued... scale fitnessMatrix to between 1 and 100
+  fitnessMatrix <- fitnessMatrix * (100/max(fitnessMatrix))
+
+  return(fitnessMatrix)
 }
