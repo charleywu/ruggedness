@@ -751,9 +751,50 @@ nk <- function(xx){
 
   return(y) 
 }
+
 #environment from Mason & Watts
 library(akima)
-MasonWatts<-function(L){
+MasonWatts<-function(L){ #L specifies the size of the output matrix, which is L x L
+  R <- 3 
+  rho <- 0.7
+  #1. create function matrix as a unimodal bivariate Gaussian with the mean randomly chosen, with variance R
+  #generate two univariate Gaussians
+  X <- dnorm(seq(1,100), mean = runif(1,1,100), sd=sqrt(R))
+  Y <- dnorm(seq(1,100), mean = runif(1,1,100), sd=sqrt(R))
+  #Bivariate Gaussian is the product of the two univariate Gaussians
+  fitnessMatrix <- X %*% t(Y)
+  #scale to between 0 and 1 (Not sure if this is what they do)
+  fitnessMatrix <- fitnessMatrix * (1/max(fitnessMatrix))
+  #2. compute psuedorandom Perlin noise
+  #2a loop through octaves
+  for (omega in 3:7){
+    octave <- 2^omega  
+    #create a smaller matrix of size octave x octave, containing  randomly assigned payoffs 
+    octaveMatrix <- matrix(runif(octave^2),ncol=octave, nrow=octave)
+    #X or Y mapping of octave sequence 
+    octaveSeq <- seq(1,100, length.out=octave)
+    #2b. smooth values of all cell values using bicubic interpolation; i.e., blow up octave x octave matrix into a 100 x 100 matrix 
+    octaveMatrix <- bicubic.grid(octaveSeq, octaveSeq, octaveMatrix, c(1,100), c(1,100),1,1) 
+    #2c. scale matrix by the persistence paramter  
+    octaveMatrix <- octaveMatrix$z * rho^omega
+    #3. sum together
+    fitnessMatrix <- fitnessMatrix + octaveMatrix
+  }
+  #3 continued... transform to L x L grid using bicubic interpolation
+  fitnessMatrix <- bicubic.grid(seq(1,L,length.out=100), seq(1,L,length.out=100), fitnessMatrix, c(1,L), c(1,L),1,1) 
+  fitnessMatrix <- fitnessMatrix$z
+  #...scale fitnessMatrix to between 1 and 100
+  fitnessMatrix <- fitnessMatrix * (100/max(fitnessMatrix))
+
+  return(fitnessMatrix)
+  #3D plotting example
+  #https://cran.r-project.org/web/packages/plot3D/vignettes/volcano.pdf
+  #library(plot3D)
+  #persp3D(z = test, clab = "m")
+}
+
+#Old Mason and Watts function, which directly computes it on the L x L grid
+MasonWattsOld<-function(L){
   R <- 3 * (L/100) #variance term
   rho <- 0.7
   #1. create function matrix as a unimodal bivariate Gaussian with the mean randomly chosen, with variance R
