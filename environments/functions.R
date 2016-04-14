@@ -784,7 +784,7 @@ MasonWatts<-function(L){ #L specifies the size of the output matrix, which is L 
   fitnessMatrix <- bicubic.grid(seq(1,L,length.out=100), seq(1,L,length.out=100), fitnessMatrix, c(1,L), c(1,L),1,1) 
   fitnessMatrix <- fitnessMatrix$z
   #...scale fitnessMatrix to between 1 and 100
-  fitnessMatrix <- fitnessMatrix * (100/max(fitnessMatrix))
+  fitnessMatrix <- fitnessMatrix * (1/max(fitnessMatrix))
 
   return(fitnessMatrix)
   #3D plotting example
