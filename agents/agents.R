@@ -13,6 +13,7 @@ source("functions.R") #environment functions
 environmentList <- c("ackley", "crossit", "drop", "egg", "griewank", "holder", "langer", "levy", "levy13", "rastr", "schaffer2", "schaffer4", "schwef", "shubert", "masonWatts", "N=20,K=5", "N=20, K=16")
 n_envs <- length(environmentList)
 
+#SIMULATION VARIABLES
 #number of agents and trials
 n.agents=100; tsteps=200
 samplesize <- 3 #change sample size
