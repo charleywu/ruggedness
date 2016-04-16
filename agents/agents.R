@@ -82,7 +82,7 @@ for (i in 2:tsteps){
 }
 #4. Save relevant information
 #TODO: implement statistics to save over learning phase
-envName <- environmentList
+envName <- "MasonWatts"
 
 
 #C) NK environments
@@ -107,7 +107,6 @@ for (k in kVec){
 	}
 	#4. Save relevant information
 	#TODO: implement statistics to save over learning phase
-	envName <- environmentList
-}
+	envName <- cat("N=20,K=", k)
 
 
