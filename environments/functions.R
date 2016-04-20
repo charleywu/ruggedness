@@ -820,7 +820,7 @@ MasonWattsOld<-function(L){
     fitnessMatrix <- fitnessMatrix + octaveMatrix
   }
   #3 continued... scale fitnessMatrix to between 1 and 100
-  fitnessMatrix <- fitnessMatrix * (100/max(fitnessMatrix))
+  fitnessMatrix <- fitnessMatrix * (1/max(fitnessMatrix))
 
   return(fitnessMatrix)
   #3D plotting example
